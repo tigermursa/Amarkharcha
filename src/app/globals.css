@@ -1,26 +1,34 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/* এখানে থিমের সব কালার ডিফাইন করুন */
+@theme {
+  --color-background: #f8fdf9;
+  --color-foreground: #0f1a12;
+  --color-card: #ffffff;
+  --color-card-foreground: #0f1a12;
+  --color-border: #d0e6d6;
+  --color-muted: #4a6a4f;
+  --color-primary: #2d6a4f; /* প্রাথমিক সবুজ */
+  --color-primary-foreground: #ffffff;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+/* ডার্ক মোডের ভ্যারিয়েবল */
+.dark {
+  --color-background: #0f1a12;
+  --color-foreground: #d4edda;
+  --color-card: #1a2a1f;
+  --color-card-foreground: #d4edda;
+  --color-border: #2a3f2e;
+  --color-muted: #8baa8f;
+  --color-primary: #52b788;
+  --color-primary-foreground: #0f1a12;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
-}
-
+/* বডিতে ভ্যারিয়েবল অ্যাপ্লাই */
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+  transition:
+    background-color 0.3s,
+    color 0.3s;
 }
