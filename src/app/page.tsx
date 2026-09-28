@@ -1,38 +1,35 @@
 // app/page.tsx
 "use client";
 
-import { useEffect } from "react";
-import { useRouter } from "next/navigation";
-import { useSession } from "@/lib/auth-client";
 import {
   useGetDashboardStatsQuery,
   useGetTransactionsQuery,
+  useGetPeriodsQuery,
 } from "@/lib/services/api";
-
+import { useSession } from "@/lib/auth-client";
 import * as FaIcons from "react-icons/fa";
 import type { IconType } from "react-icons";
 import ExpenseForm from "./components/ExpenseForm";
+import PeriodGate from "./components/PeriodGate";
 
 export default function HomePage() {
-  const { data: session, isPending } = useSession();
-  const router = useRouter();
+  return (
+    <PeriodGate>
+      <HomeContent />
+    </PeriodGate>
+  );
+}
 
+function HomeContent() {
+  const { data: session } = useSession();
   const { data: stats } = useGetDashboardStatsQuery();
-  const { data: transactionsData } = useGetTransactionsQuery({ limit: 10 });
+  const { data: periods } = useGetPeriodsQuery();
+  const activePeriod = periods?.find((p) => p.isActive);
 
-  useEffect(() => {
-    if (!isPending && !session) router.push("/login");
-  }, [session, isPending, router]);
-
-  if (isPending) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <p className="text-foreground">Loading...</p>
-      </div>
-    );
-  }
-
-  if (!session) return null;
+  // Show recent transactions from the active period
+  const { data: transactionsData } = useGetTransactionsQuery(
+    activePeriod ? { periodId: activePeriod._id, limit: 10 } : { limit: 10 },
+  );
 
   const renderIcon = (name: string) => {
     const Icon = (FaIcons as any)[name] as IconType | undefined;
@@ -44,17 +41,20 @@ export default function HomePage() {
       <div className="max-w-6xl mx-auto space-y-8">
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-foreground">
-            Welcome, {session.user.name}
+            Welcome, {session?.user.name}
           </h1>
-          <p className="text-muted-foreground">Your expense overview</p>
+          <p className="text-muted-foreground text-sm">
+            {activePeriod
+              ? `Current period: ${activePeriod.name}`
+              : "Your expense overview"}
+          </p>
         </div>
 
-        {/* Stats */}
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 md:gap-4">
           <StatCard
-            title="Total Expense"
-            value={stats?.totalExpense || 0}
-            color="text-red-500"
+            title="Current Period"
+            value={stats?.currentPeriodExpense || 0}
+            color="text-primary"
           />
           <StatCard
             title="Today"
@@ -67,10 +67,9 @@ export default function HomePage() {
             color="text-blue-500"
           />
           <StatCard
-            title="Transactions"
-            value={stats?.transactionCount || 0}
-            color="text-purple-500"
-            isCurrency={false}
+            title="All Time"
+            value={stats?.totalExpense || 0}
+            color="text-red-500"
           />
         </div>
 
@@ -80,6 +79,11 @@ export default function HomePage() {
           <div className="p-6 bg-card rounded-2xl border border-border">
             <h2 className="text-xl font-bold text-foreground mb-4">
               Recent Transactions
+              {activePeriod && (
+                <span className="block text-xs font-normal text-muted-foreground mt-0.5">
+                  {activePeriod.name}
+                </span>
+              )}
             </h2>
             <div className="space-y-3 max-h-[500px] overflow-y-auto">
               {transactionsData?.transactions.map((t) => (
@@ -87,19 +91,21 @@ export default function HomePage() {
                   key={t._id as string}
                   className="flex items-center justify-between p-3 rounded-lg bg-muted/50"
                 >
-                  <div className="flex items-center gap-3">
-                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 shrink-0 rounded-full bg-primary/10 flex items-center justify-center text-primary">
                       {renderIcon(t.categoryIcon || "FaEllipsisH")}
                     </div>
-                    <div>
-                      <p className="font-medium text-foreground">{t.item}</p>
-                      <p className="text-sm text-muted-foreground">
+                    <div className="min-w-0">
+                      <p className="font-medium text-foreground truncate">
+                        {t.item}
+                      </p>
+                      <p className="text-sm text-muted-foreground truncate">
                         {t.categoryName} •{" "}
                         {new Date(t.date).toLocaleDateString("en-GB")}
                       </p>
                     </div>
                   </div>
-                  <div className="text-right">
+                  <div className="text-right shrink-0">
                     <p className="font-bold text-red-500">-৳{t.price}</p>
                     {t.quantity && t.unit && (
                       <p className="text-xs text-muted-foreground">
@@ -112,7 +118,7 @@ export default function HomePage() {
               {(!transactionsData?.transactions ||
                 transactionsData.transactions.length === 0) && (
                 <p className="text-center text-muted-foreground py-8">
-                  No transactions yet
+                  No transactions in this period yet
                 </p>
               )}
             </div>
@@ -127,19 +133,18 @@ function StatCard({
   title,
   value,
   color,
-  isCurrency = true,
 }: {
   title: string;
   value: number;
   color: string;
-  isCurrency?: boolean;
 }) {
   return (
     <div className="p-4 rounded-2xl bg-card border border-border">
-      <p className="text-sm text-muted-foreground mb-1">{title}</p>
-      <p className={`text-xl md:text-2xl font-bold ${color}`}>
-        {isCurrency ? "৳" : ""}
-        {value.toLocaleString("en-US")}
+      <p className="text-xs md:text-sm text-muted-foreground mb-1 truncate">
+        {title}
+      </p>
+      <p className={`text-lg md:text-2xl font-bold truncate ${color}`}>
+        ৳{value.toLocaleString("en-US")}
       </p>
     </div>
   );

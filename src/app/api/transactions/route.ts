@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
-// GET: list transactions
+// GET: list transactions (filter by periodId optional)
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -15,20 +15,15 @@ export async function GET(request: NextRequest) {
     const { searchParams } = new URL(request.url);
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
+    const periodId = searchParams.get("periodId");
     const categoryId = searchParams.get("categoryId");
-    const startDate = searchParams.get("startDate");
-    const endDate = searchParams.get("endDate");
 
     const client = await clientPromise;
     const db = client.db();
 
     const filter: any = { userId: session.user.id };
+    if (periodId) filter.periodId = periodId;
     if (categoryId) filter.categoryId = categoryId;
-    if (startDate || endDate) {
-      filter.date = {};
-      if (startDate) filter.date.$gte = new Date(startDate);
-      if (endDate) filter.date.$lte = new Date(endDate);
-    }
 
     const [transactions, total] = await Promise.all([
       db
@@ -57,7 +52,7 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST: create expense
+// POST: create expense (auto-attach to active period if not provided)
 export async function POST(request: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -65,8 +60,9 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { date, item, quantity, unit, price, categoryId, note } =
-      await request.json();
+    const body = await request.json();
+    const { date, item, quantity, unit, price, categoryId, note, periodId } =
+      body;
 
     if (!item || !price || !categoryId || !date) {
       return NextResponse.json(
@@ -77,14 +73,47 @@ export async function POST(request: NextRequest) {
 
     const client = await clientPromise;
     const db = client.db();
+    const userId = session.user.id;
+
+    // Resolve period: provided or active
+    let resolvedPeriodId: string | null = periodId || null;
+    let resolvedPeriodName: string | null = null;
+
+    if (!resolvedPeriodId) {
+      const activePeriod = await db
+        .collection("periods")
+        .findOne({ userId, isActive: true });
+      if (!activePeriod) {
+        return NextResponse.json(
+          { error: "No active period. Please create one first." },
+          { status: 400 },
+        );
+      }
+      resolvedPeriodId = activePeriod._id.toString();
+      resolvedPeriodName = activePeriod.name;
+    } else {
+      const period = await db.collection("periods").findOne({
+        _id: new ObjectId(resolvedPeriodId),
+        userId,
+      });
+      if (!period) {
+        return NextResponse.json(
+          { error: "Period not found" },
+          { status: 404 },
+        );
+      }
+      resolvedPeriodName = period.name;
+    }
 
     const category = await db.collection("categories").findOne({
       _id: new ObjectId(categoryId),
-      userId: session.user.id,
+      userId,
     });
 
     const transaction = {
-      userId: session.user.id,
+      userId,
+      periodId: resolvedPeriodId,
+      periodName: resolvedPeriodName,
       date: new Date(date),
       item,
       quantity: quantity ?? null,

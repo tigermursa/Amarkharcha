@@ -12,6 +12,16 @@ export type UnitType =
   | "meter"
   | "bundle";
 
+export interface IPeriod {
+  _id?: string | ObjectId;
+  userId: string;
+  name: string;
+  startDate: Date;
+  endDate: Date;
+  isActive: boolean;
+  createdAt: Date;
+}
+
 export interface ICategory {
   _id?: string | ObjectId;
   userId: string;
@@ -24,6 +34,8 @@ export interface ICategory {
 export interface ITransaction {
   _id?: string | ObjectId;
   userId: string;
+  periodId?: string | null;
+  periodName?: string | null;
   date: Date;
   item: string;
   quantity?: number | null;
@@ -41,20 +53,23 @@ export interface IDashboardStats {
   totalExpense: number;
   todayExpense: number;
   monthExpense: number;
+  currentPeriodExpense: number;
   transactionCount: number;
 }
 
-// 🆕 Reports
-export interface IMonthlyReport {
-  month: string; // "2025-01"
-  label: string; // "Jan 2025"
+export interface IPeriodSummary {
+  _id: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  isActive: boolean;
   total: number;
   count: number;
 }
 
 export interface IDailyReport {
-  date: string; // "2025-01-15"
-  label: string; // "15 Jan"
+  date: string;
+  label: string;
   total: number;
   count: number;
 }

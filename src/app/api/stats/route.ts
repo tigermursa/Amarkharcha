@@ -22,35 +22,55 @@ export async function GET(request: NextRequest) {
     );
     const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
 
-    const [totalAgg, todayAgg, monthAgg, transactionCount] = await Promise.all([
-      db
-        .collection("transactions")
-        .aggregate([
-          { $match: { userId } },
-          { $group: { _id: null, total: { $sum: "$price" } } },
-        ])
-        .toArray(),
-      db
-        .collection("transactions")
-        .aggregate([
-          { $match: { userId, date: { $gte: startOfToday } } },
-          { $group: { _id: null, total: { $sum: "$price" } } },
-        ])
-        .toArray(),
-      db
-        .collection("transactions")
-        .aggregate([
-          { $match: { userId, date: { $gte: startOfMonth } } },
-          { $group: { _id: null, total: { $sum: "$price" } } },
-        ])
-        .toArray(),
-      db.collection("transactions").countDocuments({ userId }),
-    ]);
+    const activePeriod = await db
+      .collection("periods")
+      .findOne({ userId, isActive: true });
+
+    const [totalAgg, todayAgg, monthAgg, periodAgg, transactionCount] =
+      await Promise.all([
+        db
+          .collection("transactions")
+          .aggregate([
+            { $match: { userId } },
+            { $group: { _id: null, total: { $sum: "$price" } } },
+          ])
+          .toArray(),
+        db
+          .collection("transactions")
+          .aggregate([
+            { $match: { userId, date: { $gte: startOfToday } } },
+            { $group: { _id: null, total: { $sum: "$price" } } },
+          ])
+          .toArray(),
+        db
+          .collection("transactions")
+          .aggregate([
+            { $match: { userId, date: { $gte: startOfMonth } } },
+            { $group: { _id: null, total: { $sum: "$price" } } },
+          ])
+          .toArray(),
+        activePeriod
+          ? db
+              .collection("transactions")
+              .aggregate([
+                {
+                  $match: {
+                    userId,
+                    periodId: activePeriod._id.toString(),
+                  },
+                },
+                { $group: { _id: null, total: { $sum: "$price" } } },
+              ])
+              .toArray()
+          : Promise.resolve([]),
+        db.collection("transactions").countDocuments({ userId }),
+      ]);
 
     return NextResponse.json({
       totalExpense: totalAgg[0]?.total || 0,
       todayExpense: todayAgg[0]?.total || 0,
       monthExpense: monthAgg[0]?.total || 0,
+      currentPeriodExpense: periodAgg[0]?.total || 0,
       transactionCount,
     });
   } catch (error) {

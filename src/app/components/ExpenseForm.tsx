@@ -6,6 +6,7 @@ import {
   useAddTransactionMutation,
   useAddCategoryMutation,
   useGetCategoriesQuery,
+  useGetPeriodsQuery,
 } from "@/lib/services/api";
 import { CATEGORY_ICONS, UNITS } from "@/lib/default-categories";
 import * as FaIcons from "react-icons/fa";
@@ -25,10 +26,12 @@ export default function ExpenseForm() {
   const [addTransaction, { isLoading }] = useAddTransactionMutation();
   const [addCategory, { isLoading: addingCategory }] = useAddCategoryMutation();
   const { data: categories } = useGetCategoriesQuery();
+  const { data: periods } = useGetPeriodsQuery();
+
+  const activePeriod = periods?.find((p) => p.isActive);
 
   const [form, setForm] = useState(initialForm);
   const [error, setError] = useState("");
-
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategory, setNewCategory] = useState({
     name: "",
@@ -48,6 +51,7 @@ export default function ExpenseForm() {
         price: parseFloat(form.price),
         categoryId: form.categoryId,
         note: form.note,
+        // periodId omitted → server uses active period
       } as any).unwrap();
 
       setForm(initialForm);
@@ -60,7 +64,7 @@ export default function ExpenseForm() {
     if (!newCategory.name.trim()) return;
     try {
       const created = await addCategory(newCategory).unwrap();
-      setForm((f) => ({ ...f, categoryId: created._id as string })); // auto-select new
+      setForm((f) => ({ ...f, categoryId: created._id as string }));
       setNewCategory({ name: "", icon: "FaEllipsisH" });
       setShowNewCategory(false);
     } catch (err: any) {
@@ -78,7 +82,19 @@ export default function ExpenseForm() {
       onSubmit={handleSubmit}
       className="space-y-4 p-6 bg-card rounded-2xl border border-border"
     >
-      <h2 className="text-xl font-bold text-foreground">Add Expense</h2>
+      <div className="flex items-start justify-between gap-3 flex-wrap">
+        <h2 className="text-xl font-bold text-foreground">Add Expense</h2>
+        {activePeriod && (
+          <div className="text-right">
+            <p className="text-[10px] uppercase font-bold text-muted-foreground">
+              Active Period
+            </p>
+            <p className="text-xs font-medium text-primary truncate max-w-[180px]">
+              {activePeriod.name}
+            </p>
+          </div>
+        )}
+      </div>
 
       {error && (
         <div className="p-3 rounded-lg bg-red-500/10 text-red-500 text-sm">
@@ -86,7 +102,6 @@ export default function ExpenseForm() {
         </div>
       )}
 
-      {/* Date */}
       <div>
         <label className="block text-sm font-medium mb-1 text-foreground">
           Date *
@@ -100,7 +115,6 @@ export default function ExpenseForm() {
         />
       </div>
 
-      {/* Item */}
       <div>
         <label className="block text-sm font-medium mb-1 text-foreground">
           Item *
@@ -115,7 +129,6 @@ export default function ExpenseForm() {
         />
       </div>
 
-      {/* Quantity + Unit */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium mb-1 text-foreground">
@@ -149,7 +162,6 @@ export default function ExpenseForm() {
         </div>
       </div>
 
-      {/* Price */}
       <div>
         <label className="block text-sm font-medium mb-1 text-foreground">
           Price (৳) *
@@ -165,7 +177,6 @@ export default function ExpenseForm() {
         />
       </div>
 
-      {/* Category */}
       <div>
         <label className="block text-sm font-medium mb-1 text-foreground">
           Category *
@@ -194,7 +205,6 @@ export default function ExpenseForm() {
         </div>
       </div>
 
-      {/* New Category panel */}
       {showNewCategory && (
         <div className="p-4 rounded-lg bg-muted border border-border space-y-3">
           <h3 className="font-medium text-foreground">New Category</h3>
@@ -241,7 +251,6 @@ export default function ExpenseForm() {
         </div>
       )}
 
-      {/* Note */}
       <div>
         <label className="block text-sm font-medium mb-1 text-foreground">
           Note (optional)
@@ -255,14 +264,19 @@ export default function ExpenseForm() {
         />
       </div>
 
-      {/* Submit */}
       <button
         type="submit"
-        disabled={isLoading}
+        disabled={isLoading || !activePeriod}
         className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition disabled:opacity-50"
       >
         {isLoading ? "Adding..." : "Add Expense"}
       </button>
+
+      {!activePeriod && (
+        <p className="text-xs text-center text-muted-foreground">
+          No active period — pick or create one first.
+        </p>
+      )}
     </form>
   );
 }

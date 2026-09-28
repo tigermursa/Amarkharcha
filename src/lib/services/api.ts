@@ -4,7 +4,7 @@ import type {
   ITransaction,
   ICategory,
   IDashboardStats,
-  IMonthlyReport,
+  IPeriodSummary,
   IDailyReport,
 } from "@/types";
 
@@ -14,13 +14,7 @@ export const apiSlice = createApi({
     baseUrl: "/api",
     credentials: "include",
   }),
-  tagTypes: [
-    "Transaction",
-    "Category",
-    "Stats",
-    "MonthlyReport",
-    "DailyReport",
-  ],
+  tagTypes: ["Transaction", "Category", "Stats", "Period", "DailyReport"],
   endpoints: (builder) => ({
     // ==================== TRANSACTIONS ====================
     getTransactions: builder.query<
@@ -28,9 +22,8 @@ export const apiSlice = createApi({
       {
         page?: number;
         limit?: number;
+        periodId?: string;
         categoryId?: string;
-        startDate?: string;
-        endDate?: string;
       } | void
     >({
       query: (params) => ({ url: "/transactions", params: params || {} }),
@@ -39,12 +32,12 @@ export const apiSlice = createApi({
 
     addTransaction: builder.mutation<ITransaction, Partial<ITransaction>>({
       query: (body) => ({ url: "/transactions", method: "POST", body }),
-      invalidatesTags: ["Transaction", "Stats", "MonthlyReport", "DailyReport"],
+      invalidatesTags: ["Transaction", "Stats", "Period", "DailyReport"],
     }),
 
     deleteTransaction: builder.mutation<{ success: boolean }, string>({
       query: (id) => ({ url: `/transactions/${id}`, method: "DELETE" }),
-      invalidatesTags: ["Transaction", "Stats", "MonthlyReport", "DailyReport"],
+      invalidatesTags: ["Transaction", "Stats", "Period", "DailyReport"],
     }),
 
     // ==================== CATEGORIES ====================
@@ -59,7 +52,7 @@ export const apiSlice = createApi({
     }),
 
     updateCategory: builder.mutation<
-      { success: boolean; name: string; icon: string },
+      { success: boolean },
       { id: string; name: string; icon: string }
     >({
       query: ({ id, ...body }) => ({
@@ -71,11 +64,52 @@ export const apiSlice = createApi({
     }),
 
     deleteCategory: builder.mutation<{ success: boolean }, string>({
-      query: (id) => ({
-        url: `/categories/${id}`,
-        method: "DELETE",
-      }),
+      query: (id) => ({ url: `/categories/${id}`, method: "DELETE" }),
       invalidatesTags: ["Category"],
+    }),
+
+    // ==================== PERIODS ====================
+    getPeriods: builder.query<IPeriodSummary[], void>({
+      query: () => "/periods",
+      providesTags: ["Period"],
+    }),
+
+    createPeriod: builder.mutation<
+      IPeriodSummary,
+      {
+        name: string;
+        startDate: string;
+        endDate: string;
+        setActive?: boolean;
+      }
+    >({
+      query: (body) => ({ url: "/periods", method: "POST", body }),
+      invalidatesTags: ["Period", "Stats"],
+    }),
+
+    updatePeriod: builder.mutation<
+      { success: boolean },
+      { id: string; name: string; startDate: string; endDate: string }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/periods/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Period", "Transaction"],
+    }),
+
+    deletePeriod: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({ url: `/periods/${id}`, method: "DELETE" }),
+      invalidatesTags: ["Period", "Stats"],
+    }),
+
+    setActivePeriod: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({
+        url: `/periods/${id}/active`,
+        method: "PATCH",
+      }),
+      invalidatesTags: ["Period", "Stats", "Transaction"],
     }),
 
     // ==================== STATS ====================
@@ -85,17 +119,6 @@ export const apiSlice = createApi({
     }),
 
     // ==================== REPORTS ====================
-    getMonthlyReport: builder.query<
-      IMonthlyReport[],
-      { months?: number } | void
-    >({
-      query: (params) => ({
-        url: "/reports/monthly",
-        params: params || {},
-      }),
-      providesTags: ["MonthlyReport"],
-    }),
-
     getDailyReport: builder.query<IDailyReport[], { days?: number } | void>({
       query: (params) => ({
         url: "/reports/daily",
@@ -114,7 +137,11 @@ export const {
   useAddCategoryMutation,
   useUpdateCategoryMutation,
   useDeleteCategoryMutation,
+  useGetPeriodsQuery,
+  useCreatePeriodMutation,
+  useUpdatePeriodMutation,
+  useDeletePeriodMutation,
+  useSetActivePeriodMutation,
   useGetDashboardStatsQuery,
-  useGetMonthlyReportQuery,
   useGetDailyReportQuery,
 } = apiSlice;
