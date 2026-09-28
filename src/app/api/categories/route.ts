@@ -2,26 +2,44 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
+import { DEFAULT_CATEGORIES } from "@/lib/default-categories";
 
-// GET: ইউজারের সব ক্যাটাগরি
+// GET: user's categories (auto-seed defaults if missing)
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
+    const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const client = await clientPromise;
     const db = client.db();
+    const userId = session.user.id;
 
-    const categories = await db
+    let categories = await db
       .collection("categories")
-      .find({ userId: session.user.id })
+      .find({ userId })
       .sort({ isDefault: -1, name: 1 })
       .toArray();
+
+    // Auto-seed defaults if user has none
+    const hasDefaults = categories.some((c) => c.isDefault);
+    if (!hasDefaults) {
+      const seed = DEFAULT_CATEGORIES.map((cat) => ({
+        userId,
+        name: cat.name,
+        icon: cat.icon,
+        isDefault: true,
+        createdAt: new Date(),
+      }));
+      await db.collection("categories").insertMany(seed);
+
+      categories = await db
+        .collection("categories")
+        .find({ userId })
+        .sort({ isDefault: -1, name: 1 })
+        .toArray();
+    }
 
     return NextResponse.json(
       categories.map((c) => ({ ...c, _id: c._id.toString() })),
@@ -35,19 +53,15 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST: নতুন ক্যাটাগরি
+// POST: create new custom category
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
+    const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { name, icon } = body;
+    const { name, icon } = await request.json();
 
     if (!name || !icon) {
       return NextResponse.json(
@@ -59,10 +73,9 @@ export async function POST(request: NextRequest) {
     const client = await clientPromise;
     const db = client.db();
 
-    // চেক করুন একই নামের ক্যাটাগরি আছে কি না
     const existing = await db.collection("categories").findOne({
       userId: session.user.id,
-      name,
+      name: { $regex: `^${name}$`, $options: "i" },
     });
 
     if (existing) {

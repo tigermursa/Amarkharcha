@@ -3,8 +3,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signUp } from "@/lib/auth-client";
 import Link from "next/link";
+import { signUp } from "@/lib/auth-client";
 
 export default function RegisterPage() {
   const router = useRouter();
@@ -27,7 +27,7 @@ export default function RegisterPage() {
     });
 
     if (error) {
-      setError(error.message || "রেজিস্ট্রেশন করতে সমস্যা হয়েছে");
+      setError(error.message || "Registration failed");
       setLoading(false);
       return;
     }
@@ -40,7 +40,7 @@ export default function RegisterPage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md p-8 rounded-2xl bg-card border border-border">
         <h1 className="text-2xl font-bold text-center mb-6 text-foreground">
-          Amar Kharcha-তে রেজিস্টার করুন
+          Create your account
         </h1>
 
         {error && (
@@ -52,35 +52,35 @@ export default function RegisterPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1 text-foreground">
-              নাম
+              Name
             </label>
             <input
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               required
+              placeholder="Your name"
               className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="আপনার নাম"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1 text-foreground">
-              ইমেইল
+              Email
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="you@example.com"
+              className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1 text-foreground">
-              পাসওয়ার্ড
+              Password
             </label>
             <input
               type="password"
@@ -88,8 +88,8 @@ export default function RegisterPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
+              placeholder="At least 8 characters"
               className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-              placeholder="কমপক্ষে ৮ ক্যারেক্টার"
             />
           </div>
 
@@ -98,14 +98,14 @@ export default function RegisterPage() {
             disabled={loading}
             className="w-full py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition disabled:opacity-50"
           >
-            {loading ? "রেজিস্টার হচ্ছে..." : "রেজিস্টার"}
+            {loading ? "Creating account..." : "Register"}
           </button>
         </form>
 
         <p className="mt-4 text-center text-sm text-muted-foreground">
-          অ্যাকাউন্ট আছে?{" "}
+          Already have an account?{" "}
           <Link href="/login" className="text-primary hover:underline">
-            লগইন করুন
+            Login
           </Link>
         </p>
       </div>

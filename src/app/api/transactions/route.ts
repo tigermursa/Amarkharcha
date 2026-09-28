@@ -4,13 +4,10 @@ import { auth } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
-// GET: ট্রানজ্যাকশন লিস্ট
+// GET: list transactions
 export async function GET(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
+    const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
@@ -19,18 +16,14 @@ export async function GET(request: NextRequest) {
     const page = parseInt(searchParams.get("page") || "1");
     const limit = parseInt(searchParams.get("limit") || "20");
     const categoryId = searchParams.get("categoryId");
-    const type = searchParams.get("type");
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
 
     const client = await clientPromise;
     const db = client.db();
 
-    // ফিল্টার তৈরি
     const filter: any = { userId: session.user.id };
-
     if (categoryId) filter.categoryId = categoryId;
-    if (type) filter.type = type;
     if (startDate || endDate) {
       filter.date = {};
       if (startDate) filter.date.$gte = new Date(startDate);
@@ -64,22 +57,18 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST: নতুন ট্রানজ্যাকশন
+// POST: create expense
 export async function POST(request: NextRequest) {
   try {
-    const session = await auth.api.getSession({
-      headers: request.headers,
-    });
-
+    const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const body = await request.json();
-    const { date, item, quantity, unit, price, categoryId, type, note } = body;
+    const { date, item, quantity, unit, price, categoryId, note } =
+      await request.json();
 
-    // ভ্যালিডেশন
-    if (!item || !price || !categoryId || !type || !date) {
+    if (!item || !price || !categoryId || !date) {
       return NextResponse.json(
         { error: "Required fields missing" },
         { status: 400 },
@@ -89,7 +78,6 @@ export async function POST(request: NextRequest) {
     const client = await clientPromise;
     const db = client.db();
 
-    // ক্যাটাগরির তথ্য আনুন (ডেনরমালাইজেশনের জন্য)
     const category = await db.collection("categories").findOne({
       _id: new ObjectId(categoryId),
       userId: session.user.id,
@@ -99,13 +87,12 @@ export async function POST(request: NextRequest) {
       userId: session.user.id,
       date: new Date(date),
       item,
-      quantity: quantity || null,
-      unit: unit || null,
+      quantity: quantity ?? null,
+      unit: unit ?? null,
       price,
       categoryId,
       categoryName: category?.name || "Unknown",
       categoryIcon: category?.icon || "FaEllipsisH",
-      type,
       note: note || "",
       createdAt: new Date(),
       updatedAt: new Date(),

@@ -3,8 +3,8 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { signIn } from "@/lib/auth-client";
 import Link from "next/link";
+import { signIn } from "@/lib/auth-client";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -25,7 +25,7 @@ export default function LoginPage() {
     });
 
     if (error) {
-      setError(error.message || "লগইন করতে সমস্যা হয়েছে");
+      setError(error.message || "Login failed");
       setLoading(false);
       return;
     }
@@ -38,7 +38,7 @@ export default function LoginPage() {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md p-8 rounded-2xl bg-card border border-border">
         <h1 className="text-2xl font-bold text-center mb-6 text-foreground">
-          Amar Kharcha-তে লগইন করুন
+          Login to Amar Kharcha
         </h1>
 
         {error && (
@@ -50,21 +50,21 @@ export default function LoginPage() {
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label className="block text-sm font-medium mb-1 text-foreground">
-              ইমেইল
+              Email
             </label>
             <input
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               required
-              className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="you@example.com"
+              className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
           <div>
             <label className="block text-sm font-medium mb-1 text-foreground">
-              পাসওয়ার্ড
+              Password
             </label>
             <input
               type="password"
@@ -72,8 +72,8 @@ export default function LoginPage() {
               onChange={(e) => setPassword(e.target.value)}
               required
               minLength={8}
-              className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
               placeholder="••••••••"
+              className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
             />
           </div>
 
@@ -82,14 +82,14 @@ export default function LoginPage() {
             disabled={loading}
             className="w-full py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition disabled:opacity-50"
           >
-            {loading ? "লগইন হচ্ছে..." : "লগইন"}
+            {loading ? "Logging in..." : "Login"}
           </button>
         </form>
 
         <p className="mt-4 text-center text-sm text-muted-foreground">
-          অ্যাকাউন্ট নেই?{" "}
+          Don't have an account?{" "}
           <Link href="/register" className="text-primary hover:underline">
-            রেজিস্টার করুন
+            Register
           </Link>
         </p>
       </div>

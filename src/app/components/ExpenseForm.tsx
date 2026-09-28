@@ -4,40 +4,30 @@
 import { useState } from "react";
 import {
   useAddTransactionMutation,
+  useAddCategoryMutation,
   useGetCategoriesQuery,
 } from "@/lib/services/api";
-import { UnitType } from "@/types";
-import { IconType } from "react-icons";
+import { CATEGORY_ICONS, UNITS } from "@/lib/default-categories";
 import * as FaIcons from "react-icons/fa";
-import { CATEGORY_ICONS } from "@/lib/default-categories";
+import type { IconType } from "react-icons";
 
-const UNITS: { value: UnitType; label: string }[] = [
-  { value: "kg", label: "কেজি" },
-  { value: "gm", label: "গ্রাম" },
-  { value: "ml", label: "মিলি" },
-  { value: "l", label: "লিটার" },
-  { value: "ps", label: "পিস" },
-  { value: "pcs", label: "পিস (বহুবচন)" },
-  { value: "packet", label: "প্যাকেট" },
-  { value: "dozen", label: "ডজন" },
-  { value: "meter", label: "মিটার" },
-  { value: "bundle", label: "বান্ডেল" },
-];
+const initialForm = {
+  date: new Date().toISOString().split("T")[0],
+  item: "",
+  quantity: "",
+  unit: "",
+  price: "",
+  categoryId: "",
+  note: "",
+};
 
-export default function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
+export default function ExpenseForm() {
   const [addTransaction, { isLoading }] = useAddTransactionMutation();
+  const [addCategory, { isLoading: addingCategory }] = useAddCategoryMutation();
   const { data: categories } = useGetCategoriesQuery();
 
-  const [form, setForm] = useState({
-    date: new Date().toISOString().split("T")[0],
-    item: "",
-    quantity: "",
-    unit: "" as UnitType | "",
-    price: "",
-    categoryId: "",
-    type: "expense" as "income" | "expense",
-    note: "",
-  });
+  const [form, setForm] = useState(initialForm);
+  const [error, setError] = useState("");
 
   const [showNewCategory, setShowNewCategory] = useState(false);
   const [newCategory, setNewCategory] = useState({
@@ -47,37 +37,39 @@ export default function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
-    const body = {
-      date: form.date,
-      item: form.item,
-      quantity: form.quantity ? parseFloat(form.quantity) : undefined,
-      unit: form.unit || undefined,
-      price: parseFloat(form.price),
-      categoryId: form.categoryId,
-      type: form.type,
-      note: form.note,
-    };
+    setError("");
 
     try {
-      await addTransaction(body).unwrap();
-      setForm({
-        ...form,
-        item: "",
-        quantity: "",
-        unit: "",
-        price: "",
-        note: "",
-      });
-      onSuccess?.();
-    } catch (error) {
-      console.error("Failed to add transaction:", error);
+      await addTransaction({
+        date: form.date,
+        item: form.item,
+        quantity: form.quantity ? parseFloat(form.quantity) : undefined,
+        unit: form.unit || undefined,
+        price: parseFloat(form.price),
+        categoryId: form.categoryId,
+        note: form.note,
+      } as any).unwrap();
+
+      setForm(initialForm);
+    } catch (err: any) {
+      setError(err?.data?.error || "Failed to add expense");
     }
   };
 
-  // আইকন রেন্ডার হেল্পার
-  const renderIcon = (iconName: string) => {
-    const Icon = (FaIcons as any)[iconName] as IconType;
+  const handleCreateCategory = async () => {
+    if (!newCategory.name.trim()) return;
+    try {
+      const created = await addCategory(newCategory).unwrap();
+      setForm((f) => ({ ...f, categoryId: created._id as string })); // auto-select new
+      setNewCategory({ name: "", icon: "FaEllipsisH" });
+      setShowNewCategory(false);
+    } catch (err: any) {
+      alert(err?.data?.error || "Failed to create category");
+    }
+  };
+
+  const renderIcon = (name: string) => {
+    const Icon = (FaIcons as any)[name] as IconType | undefined;
     return Icon ? <Icon /> : null;
   };
 
@@ -86,40 +78,18 @@ export default function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
       onSubmit={handleSubmit}
       className="space-y-4 p-6 bg-card rounded-2xl border border-border"
     >
-      <h2 className="text-xl font-bold text-foreground mb-4">
-        নতুন খরচ যোগ করুন
-      </h2>
+      <h2 className="text-xl font-bold text-foreground">Add Expense</h2>
 
-      {/* ট্রানজ্যাকশন টাইপ */}
-      <div className="flex gap-2">
-        <button
-          type="button"
-          onClick={() => setForm({ ...form, type: "expense" })}
-          className={`flex-1 py-2 rounded-lg font-medium transition ${
-            form.type === "expense"
-              ? "bg-red-500 text-white"
-              : "bg-muted text-muted-foreground"
-          }`}
-        >
-          খরচ
-        </button>
-        <button
-          type="button"
-          onClick={() => setForm({ ...form, type: "income" })}
-          className={`flex-1 py-2 rounded-lg font-medium transition ${
-            form.type === "income"
-              ? "bg-green-500 text-white"
-              : "bg-muted text-muted-foreground"
-          }`}
-        >
-          আয়
-        </button>
-      </div>
+      {error && (
+        <div className="p-3 rounded-lg bg-red-500/10 text-red-500 text-sm">
+          {error}
+        </div>
+      )}
 
-      {/* তারিখ */}
+      {/* Date */}
       <div>
         <label className="block text-sm font-medium mb-1 text-foreground">
-          তারিখ *
+          Date *
         </label>
         <input
           type="date"
@@ -130,48 +100,46 @@ export default function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
         />
       </div>
 
-      {/* আইটেম (অবশ্যই লাগবে) */}
+      {/* Item */}
       <div>
         <label className="block text-sm font-medium mb-1 text-foreground">
-          আইটেম *
+          Item *
         </label>
         <input
           type="text"
           value={form.item}
           onChange={(e) => setForm({ ...form, item: e.target.value })}
           required
+          placeholder="e.g. Rice, Medicine"
           className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="যেমন: চাল, ডাল, ঔষধ"
         />
       </div>
 
-      {/* পরিমাণ + একক (অপশনাল) */}
+      {/* Quantity + Unit */}
       <div className="grid grid-cols-2 gap-3">
         <div>
           <label className="block text-sm font-medium mb-1 text-foreground">
-            পরিমাণ
+            Quantity
           </label>
           <input
             type="number"
             step="0.01"
             value={form.quantity}
             onChange={(e) => setForm({ ...form, quantity: e.target.value })}
+            placeholder="e.g. 2"
             className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-            placeholder="যেমন: 2"
           />
         </div>
         <div>
           <label className="block text-sm font-medium mb-1 text-foreground">
-            একক
+            Unit
           </label>
           <select
             value={form.unit}
-            onChange={(e) =>
-              setForm({ ...form, unit: e.target.value as UnitType })
-            }
+            onChange={(e) => setForm({ ...form, unit: e.target.value })}
             className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           >
-            <option value="">নির্বাচন করুন</option>
+            <option value="">Select unit</option>
             {UNITS.map((u) => (
               <option key={u.value} value={u.value}>
                 {u.label}
@@ -181,10 +149,10 @@ export default function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
         </div>
       </div>
 
-      {/* মূল্য */}
+      {/* Price */}
       <div>
         <label className="block text-sm font-medium mb-1 text-foreground">
-          মূল্য (৳) *
+          Price (৳) *
         </label>
         <input
           type="number"
@@ -192,15 +160,15 @@ export default function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
           value={form.price}
           onChange={(e) => setForm({ ...form, price: e.target.value })}
           required
+          placeholder="e.g. 500"
           className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          placeholder="যেমন: 500"
         />
       </div>
 
-      {/* ক্যাটাগরি */}
+      {/* Category */}
       <div>
         <label className="block text-sm font-medium mb-1 text-foreground">
-          ক্যাটাগরি *
+          Category *
         </label>
         <div className="flex gap-2">
           <select
@@ -209,39 +177,39 @@ export default function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
             required
             className="flex-1 px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           >
-            <option value="">ক্যাটাগরি নির্বাচন করুন</option>
+            <option value="">Select category</option>
             {categories?.map((cat) => (
-              <option key={cat._id} value={cat._id}>
+              <option key={cat._id as string} value={cat._id as string}>
                 {cat.name}
               </option>
             ))}
           </select>
           <button
             type="button"
-            onClick={() => setShowNewCategory(!showNewCategory)}
+            onClick={() => setShowNewCategory((s) => !s)}
             className="px-4 py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition"
           >
-            + নতুন
+            + New
           </button>
         </div>
       </div>
 
-      {/* নতুন ক্যাটাগরি তৈরি (টগল) */}
+      {/* New Category panel */}
       {showNewCategory && (
         <div className="p-4 rounded-lg bg-muted border border-border space-y-3">
-          <h3 className="font-medium text-foreground">নতুন ক্যাটাগরি</h3>
+          <h3 className="font-medium text-foreground">New Category</h3>
           <input
             type="text"
             value={newCategory.name}
             onChange={(e) =>
               setNewCategory({ ...newCategory, name: e.target.value })
             }
-            placeholder="ক্যাটাগরির নাম"
+            placeholder="Category name"
             className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
           />
           <div>
             <label className="block text-sm font-medium mb-1 text-foreground">
-              আইকন নির্বাচন করুন
+              Choose Icon
             </label>
             <div className="grid grid-cols-6 gap-2 max-h-32 overflow-y-auto p-2 border border-border rounded-lg">
               {CATEGORY_ICONS.map((iconName) => (
@@ -264,44 +232,36 @@ export default function ExpenseForm({ onSuccess }: { onSuccess?: () => void }) {
           </div>
           <button
             type="button"
-            onClick={async () => {
-              if (!newCategory.name) return;
-              await fetch("/api/categories", {
-                method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify(newCategory),
-              });
-              setNewCategory({ name: "", icon: "FaEllipsisH" });
-              setShowNewCategory(false);
-            }}
-            className="w-full py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition"
+            onClick={handleCreateCategory}
+            disabled={addingCategory || !newCategory.name.trim()}
+            className="w-full py-2 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition disabled:opacity-50"
           >
-            ক্যাটাগরি তৈরি করুন
+            {addingCategory ? "Creating..." : "Create Category"}
           </button>
         </div>
       )}
 
-      {/* নোট */}
+      {/* Note */}
       <div>
         <label className="block text-sm font-medium mb-1 text-foreground">
-          নোট (অপশনাল)
+          Note (optional)
         </label>
         <textarea
           value={form.note}
           onChange={(e) => setForm({ ...form, note: e.target.value })}
           rows={2}
+          placeholder="Additional details..."
           className="w-full px-4 py-2 rounded-lg border border-border bg-background text-foreground focus:outline-none focus:ring-2 focus:ring-primary resize-none"
-          placeholder="অতিরিক্ত তথ্য..."
         />
       </div>
 
-      {/* সাবমিট */}
+      {/* Submit */}
       <button
         type="submit"
         disabled={isLoading}
         className="w-full py-3 rounded-lg bg-primary text-primary-foreground font-medium hover:opacity-90 transition disabled:opacity-50"
       >
-        {isLoading ? "যোগ করা হচ্ছে..." : "খরচ যোগ করুন"}
+        {isLoading ? "Adding..." : "Add Expense"}
       </button>
     </form>
   );

@@ -6,25 +6,24 @@ export const apiSlice = createApi({
   reducerPath: "api",
   baseQuery: fetchBaseQuery({
     baseUrl: "/api",
-    credentials: "include", // কুকি পাঠানোর জন্য
+    credentials: "include",
   }),
   tagTypes: ["Transaction", "Category", "Stats"],
   endpoints: (builder) => ({
-    // ==================== ট্রানজ্যাকশন ====================
+    // ==================== TRANSACTIONS ====================
     getTransactions: builder.query<
       { transactions: ITransaction[]; total: number },
       {
         page?: number;
         limit?: number;
         categoryId?: string;
-        type?: string;
         startDate?: string;
         endDate?: string;
-      }
+      } | void
     >({
       query: (params) => ({
         url: "/transactions",
-        params,
+        params: params || {},
       }),
       providesTags: ["Transaction"],
     }),
@@ -38,18 +37,6 @@ export const apiSlice = createApi({
       invalidatesTags: ["Transaction", "Stats"],
     }),
 
-    updateTransaction: builder.mutation<
-      ITransaction,
-      { id: string; body: Partial<ITransaction> }
-    >({
-      query: ({ id, body }) => ({
-        url: `/transactions/${id}`,
-        method: "PUT",
-        body,
-      }),
-      invalidatesTags: ["Transaction", "Stats"],
-    }),
-
     deleteTransaction: builder.mutation<{ success: boolean }, string>({
       query: (id) => ({
         url: `/transactions/${id}`,
@@ -58,7 +45,7 @@ export const apiSlice = createApi({
       invalidatesTags: ["Transaction", "Stats"],
     }),
 
-    // ==================== ক্যাটাগরি ====================
+    // ==================== CATEGORIES ====================
     getCategories: builder.query<ICategory[], void>({
       query: () => "/categories",
       providesTags: ["Category"],
@@ -70,18 +57,10 @@ export const apiSlice = createApi({
         method: "POST",
         body,
       }),
-      invalidatesTags: ["Category"],
+      invalidatesTags: ["Category"], // 👈 triggers instant refetch
     }),
 
-    deleteCategory: builder.mutation<{ success: boolean }, string>({
-      query: (id) => ({
-        url: `/categories/${id}`,
-        method: "DELETE",
-      }),
-      invalidatesTags: ["Category"],
-    }),
-
-    // ==================== ড্যাশবোর্ড স্ট্যাটস ====================
+    // ==================== STATS ====================
     getDashboardStats: builder.query<IDashboardStats, void>({
       query: () => "/stats",
       providesTags: ["Stats"],
@@ -92,10 +71,8 @@ export const apiSlice = createApi({
 export const {
   useGetTransactionsQuery,
   useAddTransactionMutation,
-  useUpdateTransactionMutation,
   useDeleteTransactionMutation,
   useGetCategoriesQuery,
   useAddCategoryMutation,
-  useDeleteCategoryMutation,
   useGetDashboardStatsQuery,
 } = apiSlice;
