@@ -43,3 +43,18 @@ export interface IDashboardStats {
   monthExpense: number;
   transactionCount: number;
 }
+
+// 🆕 Reports
+export interface IMonthlyReport {
+  month: string; // "2025-01"
+  label: string; // "Jan 2025"
+  total: number;
+  count: number;
+}
+
+export interface IDailyReport {
+  date: string; // "2025-01-15"
+  label: string; // "15 Jan"
+  total: number;
+  count: number;
+}
