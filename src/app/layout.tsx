@@ -1,5 +1,16 @@
-import { ThemeProvider } from "./providers";
+// app/layout.tsx
+import type { Metadata } from "next";
+import { Inter } from "next/font/google";
 import "./globals.css";
+import { ThemeProvider } from "./providers";
+import StoreProvider from "./providers/StoreProvider";
+
+const inter = Inter({ subsets: ["latin"] });
+
+export const metadata: Metadata = {
+  title: "Amar Kharcha - আপনার খরচের হিসাব",
+  description: "সহজে আপনার দৈনন্দিন খরচ ট্র্যাক করুন",
+};
 
 export default function RootLayout({
   children,
@@ -8,14 +19,14 @@ export default function RootLayout({
 }) {
   return (
     <html lang="bn" suppressHydrationWarning>
-      <body suppressHydrationWarning>
+      <body className={inter.className}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
           enableSystem
           disableTransitionOnChange
         >
-          {children}
+          <StoreProvider>{children}</StoreProvider>
         </ThemeProvider>
       </body>
     </html>
