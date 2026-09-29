@@ -40,7 +40,13 @@ export const apiSlice = createApi({
       {
         page?: number;
         limit?: number;
-        sort?: "date_desc" | "date_asc" | "price_desc" | "price_asc";
+
+        sort?:
+          | "created_desc"
+          | "date_desc"
+          | "date_asc"
+          | "price_desc"
+          | "price_asc";
         startDate?: string;
         endDate?: string;
         categoryId?: string;

@@ -96,12 +96,13 @@ export async function GET(request: NextRequest) {
 
     // Sort map
     const sortMap: Record<string, Record<string, 1 | -1>> = {
+      created_desc: { createdAt: -1 }, // 👈 new: last added first
       date_desc: { date: -1, createdAt: -1 },
       date_asc: { date: 1, createdAt: 1 },
       price_desc: { price: -1, date: -1 },
       price_asc: { price: 1, date: -1 },
     };
-    const sortQuery = sortMap[sort] || sortMap.date_desc;
+    const sortQuery = sortMap[sort] || sortMap.created_desc;
 
     const [transactions, total] = await Promise.all([
       db
