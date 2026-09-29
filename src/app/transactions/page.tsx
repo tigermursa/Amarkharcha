@@ -72,14 +72,19 @@ function TransactionsContent() {
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
         {/* Header */}
+        {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">
               All Transactions
             </h1>
             <p className="text-muted-foreground text-sm">
-              {total.toLocaleString("en-US")} total transaction
+              {total.toLocaleString("en-US")} transaction
               {total !== 1 ? "s" : ""}
+              {" · "}
+              <span className="font-semibold text-red-500">
+                ৳{(data?.totalAmount || 0).toLocaleString("en-US")}
+              </span>
             </p>
           </div>
         </div>

@@ -7,6 +7,7 @@ import type {
   IPeriodSummary,
   IDailyReport,
 } from "@/types";
+import { IPeriodSummaryReport } from "../docx/period-report";
 
 export const apiSlice = createApi({
   reducerPath: "api",
@@ -16,23 +17,11 @@ export const apiSlice = createApi({
   }),
   tagTypes: ["Transaction", "Category", "Stats", "Period", "DailyReport"],
   endpoints: (builder) => ({
-    // ==================== TRANSACTIONS ====================
-    // getTransactions: builder.query<
-    //   { transactions: ITransaction[]; total: number },
-    //   {
-    //     page?: number;
-    //     limit?: number;
-    //     periodId?: string;
-    //     categoryId?: string;
-    //   } | void
-    // >({
-    //   query: (params) => ({ url: "/transactions", params: params || {} }),
-    //   providesTags: ["Transaction"],
-    // }),
     getTransactions: builder.query<
       {
         transactions: ITransaction[];
         total: number;
+        totalAmount: number; // 👈 new
         page: number;
         limit: number;
         totalPages: number;
@@ -40,7 +29,6 @@ export const apiSlice = createApi({
       {
         page?: number;
         limit?: number;
-
         sort?:
           | "created_desc"
           | "date_desc"
@@ -151,6 +139,10 @@ export const apiSlice = createApi({
         params: params || {},
       }),
       providesTags: ["DailyReport"],
+    }),
+    // summary report for a specific period
+    getPeriodSummary: builder.query<IPeriodSummaryReport, string>({
+      query: (id) => `/periods/${id}/summary`,
     }),
   }),
 });

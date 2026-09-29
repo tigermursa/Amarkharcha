@@ -4,7 +4,7 @@ import { auth } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
-// GET: list transactions (filter by periodId optional)
+// GET: list transactions with pagination, sort, and filters
 // export async function GET(request: NextRequest) {
 //   try {
 //     const session = await auth.api.getSession({ headers: request.headers });
@@ -13,23 +13,55 @@ import { ObjectId } from "mongodb";
 //     }
 
 //     const { searchParams } = new URL(request.url);
-//     const page = parseInt(searchParams.get("page") || "1");
-//     const limit = parseInt(searchParams.get("limit") || "20");
-//     const periodId = searchParams.get("periodId");
+
+//     const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+//     const limit = Math.min(
+//       100,
+//       Math.max(1, parseInt(searchParams.get("limit") || "20")),
+//     );
+//     const sort = searchParams.get("sort") || "date_desc";
+//     const startDate = searchParams.get("startDate");
+//     const endDate = searchParams.get("endDate");
 //     const categoryId = searchParams.get("categoryId");
+//     const periodId = searchParams.get("periodId");
 
 //     const client = await clientPromise;
 //     const db = client.db();
 
 //     const filter: any = { userId: session.user.id };
-//     if (periodId) filter.periodId = periodId;
+
 //     if (categoryId) filter.categoryId = categoryId;
+//     if (periodId) filter.periodId = periodId;
+
+//     if (startDate || endDate) {
+//       filter.date = {};
+//       if (startDate) {
+//         const s = new Date(startDate);
+//         s.setHours(0, 0, 0, 0);
+//         filter.date.$gte = s;
+//       }
+//       if (endDate) {
+//         const e = new Date(endDate);
+//         e.setHours(23, 59, 59, 999);
+//         filter.date.$lte = e;
+//       }
+//     }
+
+//     // Sort map
+//     const sortMap: Record<string, Record<string, 1 | -1>> = {
+//       created_desc: { createdAt: -1 }, // 👈 new: last added first
+//       date_desc: { date: -1, createdAt: -1 },
+//       date_asc: { date: 1, createdAt: 1 },
+//       price_desc: { price: -1, date: -1 },
+//       price_asc: { price: 1, date: -1 },
+//     };
+//     const sortQuery = sortMap[sort] || sortMap.created_desc;
 
 //     const [transactions, total] = await Promise.all([
 //       db
 //         .collection("transactions")
 //         .find(filter)
-//         .sort({ date: -1 })
+//         .sort(sortQuery)
 //         .skip((page - 1) * limit)
 //         .limit(limit)
 //         .toArray(),
@@ -42,6 +74,9 @@ import { ObjectId } from "mongodb";
 //         _id: t._id.toString(),
 //       })),
 //       total,
+//       page,
+//       limit,
+//       totalPages: Math.ceil(total / limit),
 //     });
 //   } catch (error) {
 //     console.error("Error fetching transactions:", error);
@@ -51,6 +86,7 @@ import { ObjectId } from "mongodb";
 //     );
 //   }
 // }
+
 // GET: list transactions with pagination, sort, and filters
 export async function GET(request: NextRequest) {
   try {
@@ -66,7 +102,7 @@ export async function GET(request: NextRequest) {
       100,
       Math.max(1, parseInt(searchParams.get("limit") || "20")),
     );
-    const sort = searchParams.get("sort") || "date_desc";
+    const sort = searchParams.get("sort") || "created_desc";
     const startDate = searchParams.get("startDate");
     const endDate = searchParams.get("endDate");
     const categoryId = searchParams.get("categoryId");
@@ -94,9 +130,8 @@ export async function GET(request: NextRequest) {
       }
     }
 
-    // Sort map
     const sortMap: Record<string, Record<string, 1 | -1>> = {
-      created_desc: { createdAt: -1 }, // 👈 new: last added first
+      created_desc: { createdAt: -1 },
       date_desc: { date: -1, createdAt: -1 },
       date_asc: { date: 1, createdAt: 1 },
       price_desc: { price: -1, date: -1 },
@@ -104,7 +139,7 @@ export async function GET(request: NextRequest) {
     };
     const sortQuery = sortMap[sort] || sortMap.created_desc;
 
-    const [transactions, total] = await Promise.all([
+    const [transactions, total, sumAgg] = await Promise.all([
       db
         .collection("transactions")
         .find(filter)
@@ -113,6 +148,13 @@ export async function GET(request: NextRequest) {
         .limit(limit)
         .toArray(),
       db.collection("transactions").countDocuments(filter),
+      db
+        .collection("transactions")
+        .aggregate([
+          { $match: filter },
+          { $group: { _id: null, totalAmount: { $sum: "$price" } } },
+        ])
+        .toArray(),
     ]);
 
     return NextResponse.json({
@@ -121,6 +163,7 @@ export async function GET(request: NextRequest) {
         _id: t._id.toString(),
       })),
       total,
+      totalAmount: sumAgg[0]?.totalAmount || 0, // 👈 filtered sum
       page,
       limit,
       totalPages: Math.ceil(total / limit),
