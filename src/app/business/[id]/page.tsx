@@ -3,8 +3,7 @@
 
 import { useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import PeriodGate from "@/components/PeriodGate";
-import { useConfirm } from "@/components/ConfirmDialog";
+
 import { toast } from "sonner";
 import {
   useGetBusinessQuery,
@@ -20,6 +19,8 @@ import {
   FaChartLine,
 } from "react-icons/fa";
 import type { IProfit } from "@/types";
+import PeriodGate from "@/app/components/PeriodGate";
+import { useConfirm } from "@/app/components/ConfirmDialog";
 
 const formatDate = (d: string) =>
   new Date(d).toLocaleDateString("en-GB", {
