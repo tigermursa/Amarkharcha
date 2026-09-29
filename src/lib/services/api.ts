@@ -17,19 +17,39 @@ export const apiSlice = createApi({
   tagTypes: ["Transaction", "Category", "Stats", "Period", "DailyReport"],
   endpoints: (builder) => ({
     // ==================== TRANSACTIONS ====================
+    // getTransactions: builder.query<
+    //   { transactions: ITransaction[]; total: number },
+    //   {
+    //     page?: number;
+    //     limit?: number;
+    //     periodId?: string;
+    //     categoryId?: string;
+    //   } | void
+    // >({
+    //   query: (params) => ({ url: "/transactions", params: params || {} }),
+    //   providesTags: ["Transaction"],
+    // }),
     getTransactions: builder.query<
-      { transactions: ITransaction[]; total: number },
+      {
+        transactions: ITransaction[];
+        total: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      },
       {
         page?: number;
         limit?: number;
-        periodId?: string;
+        sort?: "date_desc" | "date_asc" | "price_desc" | "price_asc";
+        startDate?: string;
+        endDate?: string;
         categoryId?: string;
+        periodId?: string;
       } | void
     >({
       query: (params) => ({ url: "/transactions", params: params || {} }),
       providesTags: ["Transaction"],
     }),
-
     addTransaction: builder.mutation<ITransaction, Partial<ITransaction>>({
       query: (body) => ({ url: "/transactions", method: "POST", body }),
       invalidatesTags: ["Transaction", "Stats", "Period", "DailyReport"],

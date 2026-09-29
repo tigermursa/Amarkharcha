@@ -5,6 +5,53 @@ import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
 // GET: list transactions (filter by periodId optional)
+// export async function GET(request: NextRequest) {
+//   try {
+//     const session = await auth.api.getSession({ headers: request.headers });
+//     if (!session) {
+//       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+//     }
+
+//     const { searchParams } = new URL(request.url);
+//     const page = parseInt(searchParams.get("page") || "1");
+//     const limit = parseInt(searchParams.get("limit") || "20");
+//     const periodId = searchParams.get("periodId");
+//     const categoryId = searchParams.get("categoryId");
+
+//     const client = await clientPromise;
+//     const db = client.db();
+
+//     const filter: any = { userId: session.user.id };
+//     if (periodId) filter.periodId = periodId;
+//     if (categoryId) filter.categoryId = categoryId;
+
+//     const [transactions, total] = await Promise.all([
+//       db
+//         .collection("transactions")
+//         .find(filter)
+//         .sort({ date: -1 })
+//         .skip((page - 1) * limit)
+//         .limit(limit)
+//         .toArray(),
+//       db.collection("transactions").countDocuments(filter),
+//     ]);
+
+//     return NextResponse.json({
+//       transactions: transactions.map((t) => ({
+//         ...t,
+//         _id: t._id.toString(),
+//       })),
+//       total,
+//     });
+//   } catch (error) {
+//     console.error("Error fetching transactions:", error);
+//     return NextResponse.json(
+//       { error: "Internal Server Error" },
+//       { status: 500 },
+//     );
+//   }
+// }
+// GET: list transactions with pagination, sort, and filters
 export async function GET(request: NextRequest) {
   try {
     const session = await auth.api.getSession({ headers: request.headers });
@@ -13,23 +60,54 @@ export async function GET(request: NextRequest) {
     }
 
     const { searchParams } = new URL(request.url);
-    const page = parseInt(searchParams.get("page") || "1");
-    const limit = parseInt(searchParams.get("limit") || "20");
-    const periodId = searchParams.get("periodId");
+
+    const page = Math.max(1, parseInt(searchParams.get("page") || "1"));
+    const limit = Math.min(
+      100,
+      Math.max(1, parseInt(searchParams.get("limit") || "20")),
+    );
+    const sort = searchParams.get("sort") || "date_desc";
+    const startDate = searchParams.get("startDate");
+    const endDate = searchParams.get("endDate");
     const categoryId = searchParams.get("categoryId");
+    const periodId = searchParams.get("periodId");
 
     const client = await clientPromise;
     const db = client.db();
 
     const filter: any = { userId: session.user.id };
-    if (periodId) filter.periodId = periodId;
+
     if (categoryId) filter.categoryId = categoryId;
+    if (periodId) filter.periodId = periodId;
+
+    if (startDate || endDate) {
+      filter.date = {};
+      if (startDate) {
+        const s = new Date(startDate);
+        s.setHours(0, 0, 0, 0);
+        filter.date.$gte = s;
+      }
+      if (endDate) {
+        const e = new Date(endDate);
+        e.setHours(23, 59, 59, 999);
+        filter.date.$lte = e;
+      }
+    }
+
+    // Sort map
+    const sortMap: Record<string, Record<string, 1 | -1>> = {
+      date_desc: { date: -1, createdAt: -1 },
+      date_asc: { date: 1, createdAt: 1 },
+      price_desc: { price: -1, date: -1 },
+      price_asc: { price: 1, date: -1 },
+    };
+    const sortQuery = sortMap[sort] || sortMap.date_desc;
 
     const [transactions, total] = await Promise.all([
       db
         .collection("transactions")
         .find(filter)
-        .sort({ date: -1 })
+        .sort(sortQuery)
         .skip((page - 1) * limit)
         .limit(limit)
         .toArray(),
@@ -42,6 +120,9 @@ export async function GET(request: NextRequest) {
         _id: t._id.toString(),
       })),
       total,
+      page,
+      limit,
+      totalPages: Math.ceil(total / limit),
     });
   } catch (error) {
     console.error("Error fetching transactions:", error);
@@ -51,7 +132,6 @@ export async function GET(request: NextRequest) {
     );
   }
 }
-
 // POST: create expense (auto-attach to active period if not provided)
 export async function POST(request: NextRequest) {
   try {

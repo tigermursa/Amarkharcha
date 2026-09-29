@@ -1,4 +1,4 @@
-// app/api/periods/[id]/route.ts
+// src/app/api/periods/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
@@ -7,9 +7,11 @@ import { ObjectId } from "mongodb";
 // PUT: update a period
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
+
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -38,7 +40,7 @@ export async function PUT(
     const db = client.db();
 
     const period = await db.collection("periods").findOne({
-      _id: new ObjectId(params.id),
+      _id: new ObjectId(id),
       userId: session.user.id,
     });
 
@@ -49,15 +51,14 @@ export async function PUT(
     await db
       .collection("periods")
       .updateOne(
-        { _id: new ObjectId(params.id) },
+        { _id: new ObjectId(id) },
         { $set: { name: name.trim(), startDate: start, endDate: end } },
       );
 
-    // Denormalize name to transactions
     await db
       .collection("transactions")
       .updateMany(
-        { userId: session.user.id, periodId: params.id },
+        { userId: session.user.id, periodId: id },
         { $set: { periodName: name.trim() } },
       );
 
@@ -74,9 +75,11 @@ export async function PUT(
 // DELETE: remove a period (only if no transactions)
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
+
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -86,7 +89,7 @@ export async function DELETE(
     const db = client.db();
 
     const period = await db.collection("periods").findOne({
-      _id: new ObjectId(params.id),
+      _id: new ObjectId(id),
       userId: session.user.id,
     });
 
@@ -96,7 +99,7 @@ export async function DELETE(
 
     const usageCount = await db.collection("transactions").countDocuments({
       userId: session.user.id,
-      periodId: params.id,
+      periodId: id,
     });
 
     if (usageCount > 0) {
@@ -108,7 +111,7 @@ export async function DELETE(
       );
     }
 
-    await db.collection("periods").deleteOne({ _id: new ObjectId(params.id) });
+    await db.collection("periods").deleteOne({ _id: new ObjectId(id) });
 
     // If deleted one was active, make the newest remaining period active
     if (period.isActive) {

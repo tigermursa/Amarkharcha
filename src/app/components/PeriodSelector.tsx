@@ -1,4 +1,4 @@
-// components/PeriodSelector.tsx
+// src/components/PeriodSelector.tsx
 "use client";
 
 import { useEffect, useState } from "react";
@@ -7,7 +7,11 @@ import {
   useSetActivePeriodMutation,
 } from "@/lib/services/api";
 
-export default function PeriodSelector() {
+export default function PeriodSelector({
+  fullWidth = false,
+}: {
+  fullWidth?: boolean;
+}) {
   const { data: periods } = useGetPeriodsQuery();
   const [setActive] = useSetActivePeriodMutation();
   const [open, setOpen] = useState(false);
@@ -23,18 +27,29 @@ export default function PeriodSelector() {
   if (!periods || periods.length === 0) return null;
 
   return (
-    <div className="relative" onClick={(e) => e.stopPropagation()}>
+    <div
+      className={`relative ${fullWidth ? "w-full" : ""}`}
+      onClick={(e) => e.stopPropagation()}
+    >
       <button
         onClick={() => setOpen((o) => !o)}
-        className="flex items-center gap-2 text-xs md:text-sm font-medium px-3 py-1.5 rounded-lg border border-border bg-background text-foreground hover:bg-muted transition max-w-[180px]"
+        className={`flex items-center gap-2 text-xs md:text-sm font-medium px-3 py-1.5 rounded-lg border border-border bg-background text-foreground hover:bg-muted transition ${
+          fullWidth ? "w-full justify-between" : "max-w-[180px]"
+        }`}
       >
-        <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
-        <span className="truncate">{active?.name || "No active period"}</span>
-        <span className="text-muted-foreground text-[10px]">▼</span>
+        <div className="flex items-center gap-2 min-w-0">
+          <span className="w-2 h-2 rounded-full bg-primary shrink-0" />
+          <span className="truncate">{active?.name || "No active period"}</span>
+        </div>
+        <span className="text-muted-foreground text-[10px] shrink-0">▼</span>
       </button>
 
       {open && (
-        <div className="absolute right-0 mt-2 w-64 max-h-80 overflow-y-auto rounded-xl border border-border bg-card shadow-lg z-50">
+        <div
+          className={`absolute mt-2 max-h-80 overflow-y-auto rounded-xl border border-border bg-card shadow-lg z-50 ${
+            fullWidth ? "left-0 right-0" : "right-0 w-64"
+          }`}
+        >
           <p className="px-3 py-2 text-[10px] uppercase font-bold text-muted-foreground border-b border-border">
             Switch Period
           </p>

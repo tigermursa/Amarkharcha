@@ -2,7 +2,7 @@
 "use client";
 
 import { useState } from "react";
-import PeriodGate from "@/components/PeriodGate";
+
 import {
   useGetPeriodsQuery,
   useCreatePeriodMutation,
@@ -11,6 +11,7 @@ import {
   useSetActivePeriodMutation,
 } from "@/lib/services/api";
 import type { IPeriodSummary } from "@/types";
+import PeriodGate from "../components/PeriodGate";
 
 const toInputDate = (d: string) => new Date(d).toISOString().split("T")[0];
 

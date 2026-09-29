@@ -1,4 +1,4 @@
-// app/api/periods/[id]/active/route.ts
+// src/app/api/periods/[id]/active/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
@@ -7,9 +7,11 @@ import { ObjectId } from "mongodb";
 // PATCH: mark this period as active
 export async function PATCH(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
+
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -20,7 +22,7 @@ export async function PATCH(
     const userId = session.user.id;
 
     const target = await db.collection("periods").findOne({
-      _id: new ObjectId(params.id),
+      _id: new ObjectId(id),
       userId,
     });
 
@@ -34,10 +36,7 @@ export async function PATCH(
 
     await db
       .collection("periods")
-      .updateOne(
-        { _id: new ObjectId(params.id) },
-        { $set: { isActive: true } },
-      );
+      .updateOne({ _id: new ObjectId(id) }, { $set: { isActive: true } });
 
     return NextResponse.json({ success: true });
   } catch (error) {

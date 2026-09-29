@@ -1,4 +1,4 @@
-// app/api/categories/[id]/route.ts
+// src/app/api/categories/[id]/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
@@ -7,9 +7,11 @@ import { ObjectId } from "mongodb";
 // PUT: update a custom category
 export async function PUT(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
+
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -27,7 +29,7 @@ export async function PUT(
     const db = client.db();
 
     const category = await db.collection("categories").findOne({
-      _id: new ObjectId(params.id),
+      _id: new ObjectId(id),
       userId: session.user.id,
     });
 
@@ -45,11 +47,10 @@ export async function PUT(
       );
     }
 
-    // Duplicate name check (case-insensitive, excluding itself)
     const duplicate = await db.collection("categories").findOne({
       userId: session.user.id,
       name: { $regex: `^${name}$`, $options: "i" },
-      _id: { $ne: new ObjectId(params.id) },
+      _id: { $ne: new ObjectId(id) },
     });
     if (duplicate) {
       return NextResponse.json(
@@ -60,13 +61,12 @@ export async function PUT(
 
     await db
       .collection("categories")
-      .updateOne({ _id: new ObjectId(params.id) }, { $set: { name, icon } });
+      .updateOne({ _id: new ObjectId(id) }, { $set: { name, icon } });
 
-    // Denormalize updates to transactions
     await db
       .collection("transactions")
       .updateMany(
-        { userId: session.user.id, categoryId: params.id },
+        { userId: session.user.id, categoryId: id },
         { $set: { categoryName: name, categoryIcon: icon } },
       );
 
@@ -83,9 +83,11 @@ export async function PUT(
 // DELETE: remove a custom category
 export async function DELETE(
   request: NextRequest,
-  { params }: { params: { id: string } },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
+
     const session = await auth.api.getSession({ headers: request.headers });
     if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
@@ -95,7 +97,7 @@ export async function DELETE(
     const db = client.db();
 
     const category = await db.collection("categories").findOne({
-      _id: new ObjectId(params.id),
+      _id: new ObjectId(id),
       userId: session.user.id,
     });
 
@@ -113,10 +115,9 @@ export async function DELETE(
       );
     }
 
-    // Check if any transactions use this category
     const usageCount = await db.collection("transactions").countDocuments({
       userId: session.user.id,
-      categoryId: params.id,
+      categoryId: id,
     });
 
     if (usageCount > 0) {
@@ -128,9 +129,7 @@ export async function DELETE(
       );
     }
 
-    await db
-      .collection("categories")
-      .deleteOne({ _id: new ObjectId(params.id) });
+    await db.collection("categories").deleteOne({ _id: new ObjectId(id) });
 
     return NextResponse.json({ success: true });
   } catch (error) {

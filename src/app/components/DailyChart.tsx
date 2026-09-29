@@ -81,7 +81,7 @@ export default function DailyChart() {
                 fontSize: "0.875rem",
                 color: "hsl(var(--foreground))",
               }}
-              formatter={(value: number) => [`৳${value}`, "Expense"]}
+              formatter={(value) => [`৳${Number(value ?? 0)}`, "Expense"]}
             />
             <Bar
               dataKey="total"
