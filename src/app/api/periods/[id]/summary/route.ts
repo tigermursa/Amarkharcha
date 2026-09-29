@@ -1,17 +1,21 @@
+// src/app/api/periods/[id]/summary/route.ts
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import clientPromise from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 
+// GET: category-wise breakdown for a specific period
 export async function GET(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await params;
+
     const session = await auth.api.getSession({ headers: request.headers });
-    if (!session)
+    if (!session) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
 
     const client = await clientPromise;
     const db = client.db();
@@ -21,8 +25,9 @@ export async function GET(
       userId: session.user.id,
     });
 
-    if (!period)
+    if (!period) {
       return NextResponse.json({ error: "Period not found" }, { status: 404 });
+    }
 
     const breakdown = await db
       .collection("transactions")
@@ -53,8 +58,8 @@ export async function GET(
       },
       breakdown: breakdown.map((b) => ({
         categoryId: b._id,
-        categoryName: b.categoryName,
-        categoryIcon: b.categoryIcon,
+        categoryName: b.categoryName || "Unknown",
+        categoryIcon: b.categoryIcon || "FaEllipsisH",
         total: b.total,
         count: b.count,
       })),

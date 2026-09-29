@@ -162,4 +162,5 @@ export const {
   useSetActivePeriodMutation,
   useGetDashboardStatsQuery,
   useGetDailyReportQuery,
+  useGetPeriodSummaryQuery,
 } = apiSlice;

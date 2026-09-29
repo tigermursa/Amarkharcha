@@ -12,6 +12,8 @@ import {
 } from "@/lib/services/api";
 import type { IPeriodSummary } from "@/types";
 import PeriodGate from "../components/PeriodGate";
+import PeriodDocxButton from "../components/PeriodDocxButton";
+import { toast } from "sonner";
 
 const toInputDate = (d: string) => new Date(d).toISOString().split("T")[0];
 
@@ -100,6 +102,7 @@ function PeriodsContent() {
           startDate: form.startDate,
           endDate: form.endDate,
         }).unwrap();
+        toast.success("Period updated");
       } else {
         await createPeriod({
           name: form.name.trim(),
@@ -107,27 +110,32 @@ function PeriodsContent() {
           endDate: form.endDate,
           setActive: form.setActive,
         }).unwrap();
+        toast.success("Period created");
       }
       resetForm();
     } catch (err: any) {
-      setError(err?.data?.error || "Something went wrong");
+      const msg = err?.data?.error || "Something went wrong";
+      setError(msg);
+      toast.error(msg);
     }
   };
 
   const handleDelete = async (p: IPeriodSummary) => {
-    if (!confirm(`Delete period "${p.name}"?`)) return;
     try {
       await deletePeriod(p._id).unwrap();
+      toast.success(`Period "${p.name}" deleted`);
     } catch (err: any) {
       alert(err?.data?.error || "Failed to delete");
+      toast.error(err?.data?.error || "Failed to delete");
     }
   };
 
   const handleActivate = async (p: IPeriodSummary) => {
     try {
       await setActive(p._id).unwrap();
+      toast.success(`Switched to "${p.name}"`);
     } catch (err: any) {
-      alert(err?.data?.error || "Failed to activate");
+      toast.error(err?.data?.error || "Failed to activate");
     }
   };
 
@@ -268,64 +276,31 @@ function PeriodCard({
   onActivate: () => void;
 }) {
   return (
-    <div
-      className={`p-4 rounded-2xl bg-card border transition ${
-        period.isActive ? "border-primary" : "border-border"
-      }`}
-    >
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-semibold text-foreground truncate">
-              {period.name}
-            </h3>
-            {period.isActive && (
-              <span className="text-[10px] uppercase font-bold px-2 py-0.5 rounded-full bg-primary/15 text-primary">
-                Active
-              </span>
-            )}
-          </div>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {formatDate(period.startDate)} → {formatDate(period.endDate)}
-          </p>
-        </div>
-      </div>
-
-      <div className="flex items-center justify-between gap-2 py-2 border-t border-border">
-        <div>
-          <p className="text-xs text-muted-foreground">Total</p>
-          <p className="text-lg font-bold text-red-500">
-            ৳{period.total.toLocaleString("en-US")}
-          </p>
-        </div>
-        <div className="text-right">
-          <p className="text-xs text-muted-foreground">Transactions</p>
-          <p className="text-lg font-bold text-foreground">{period.count}</p>
-        </div>
-      </div>
-
-      <div className="flex items-center gap-1 pt-2 border-t border-border">
-        {!period.isActive && (
-          <button
-            onClick={onActivate}
-            className="text-xs font-medium px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition"
-          >
-            Set Active
-          </button>
-        )}
+    <div className="flex items-center gap-1 pt-2 border-t border-border flex-wrap">
+      {!period.isActive && (
         <button
-          onClick={onEdit}
-          className="text-xs font-medium px-3 py-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition ml-auto"
+          onClick={onActivate}
+          className="text-xs font-medium px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition"
         >
-          Edit
+          Set Active
         </button>
-        <button
-          onClick={onDelete}
-          className="text-xs font-medium px-3 py-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-muted transition"
-        >
-          Delete
-        </button>
-      </div>
+      )}
+
+      {/* 👇 NEW: DOCX export */}
+      <PeriodDocxButton periodId={period._id} periodName={period.name} />
+
+      <button
+        onClick={onEdit}
+        className="text-xs font-medium px-3 py-1.5 rounded-lg text-muted-foreground hover:text-primary hover:bg-muted transition ml-auto"
+      >
+        Edit
+      </button>
+      <button
+        onClick={onDelete}
+        className="text-xs font-medium px-3 py-1.5 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-muted transition"
+      >
+        Delete
+      </button>
     </div>
   );
 }

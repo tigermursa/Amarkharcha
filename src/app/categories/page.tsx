@@ -15,6 +15,7 @@ import { CATEGORY_ICONS } from "@/lib/default-categories";
 import * as FaIcons from "react-icons/fa";
 import type { IconType } from "react-icons";
 import type { ICategory } from "@/types";
+import { toast } from "sonner";
 
 export default function CategoriesPage() {
   const { data: session, isPending } = useSession();
@@ -72,15 +73,16 @@ export default function CategoriesPage() {
           name: form.name.trim(),
           icon: form.icon,
         }).unwrap();
+        toast.success("Category updated");
       } else {
-        await addCategory({
-          name: form.name.trim(),
-          icon: form.icon,
-        }).unwrap();
+        await addCategory({ name: form.name.trim(), icon: form.icon }).unwrap();
+        toast.success("Category created");
       }
       resetForm();
     } catch (err: any) {
-      setError(err?.data?.error || "Something went wrong");
+      const msg = err?.data?.error || "Something went wrong";
+      setError(msg);
+      toast.error(msg);
     }
   };
 
@@ -89,8 +91,9 @@ export default function CategoriesPage() {
     if (!confirm(`Delete category "${cat.name}"?`)) return;
     try {
       await deleteCategory(cat._id as string).unwrap();
+      toast.success(`Category "${cat.name}" deleted`);
     } catch (err: any) {
-      alert(err?.data?.error || "Failed to delete");
+      toast.error(err?.data?.error || "Failed to delete");
     }
   };
 

@@ -5,6 +5,7 @@ import "./globals.css";
 import { ThemeProvider } from "./providers";
 import StoreProvider from "./providers/StoreProvider";
 import Navbar from "./components/Navbar";
+import ToastProvider from "./components/ToastProvider";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -30,6 +31,7 @@ export default function RootLayout({
           <StoreProvider>
             <Navbar />
             {children}
+            <ToastProvider />
           </StoreProvider>
         </ThemeProvider>
       </body>

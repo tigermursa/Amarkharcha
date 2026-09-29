@@ -73,3 +73,22 @@ export interface IDailyReport {
   total: number;
   count: number;
 }
+export type PendingType = "they_owe_me" | "i_owe_them";
+
+export interface IPending {
+  _id?: string | ObjectId;
+  userId: string;
+  type: PendingType;
+  name: string;
+  amount: number;
+  note?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IPendingGrouped {
+  receivables: IPending[];
+  payables: IPending[];
+  receivablesTotal: number;
+  payablesTotal: number;
+}

@@ -11,6 +11,7 @@ import {
 import { CATEGORY_ICONS, UNITS } from "@/lib/default-categories";
 import * as FaIcons from "react-icons/fa";
 import type { IconType } from "react-icons";
+import { toast } from "sonner";
 
 const initialForm = {
   date: new Date().toISOString().split("T")[0],
@@ -53,10 +54,11 @@ export default function ExpenseForm() {
         note: form.note,
         // periodId omitted → server uses active period
       } as any).unwrap();
-
+      toast.success(`Category "${created.name}" created`);
       setForm(initialForm);
     } catch (err: any) {
       setError(err?.data?.error || "Failed to add expense");
+      toast.error(err?.data?.error || "Failed to create category");
     }
   };
 
@@ -67,8 +69,9 @@ export default function ExpenseForm() {
       setForm((f) => ({ ...f, categoryId: created._id as string }));
       setNewCategory({ name: "", icon: "FaEllipsisH" });
       setShowNewCategory(false);
+      toast.success(`Category "${created.name}" created`);
     } catch (err: any) {
-      alert(err?.data?.error || "Failed to create category");
+      toast.error(err?.data?.error || "Failed to create category");
     }
   };
 
