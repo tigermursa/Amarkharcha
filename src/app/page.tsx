@@ -11,6 +11,7 @@ import * as FaIcons from "react-icons/fa";
 import type { IconType } from "react-icons";
 import ExpenseForm from "./components/ExpenseForm";
 import PeriodGate from "./components/PeriodGate";
+import CountUp from "./components/CountUp";
 
 export default function HomePage() {
   return (
@@ -143,9 +144,10 @@ function StatCard({
       <p className="text-xs md:text-sm text-muted-foreground mb-1 truncate">
         {title}
       </p>
-      <p className={`text-lg md:text-2xl font-bold truncate ${color}`}>
-        ৳{value.toLocaleString("en-US")}
-      </p>
+      <CountUp
+        value={value}
+        className={`text-lg md:text-2xl font-bold truncate ${color}`}
+      />
     </div>
   );
 }

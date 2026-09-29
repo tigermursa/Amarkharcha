@@ -20,7 +20,7 @@ import PeriodGate from "../components/PeriodGate";
 import { useConfirm } from "../components/ConfirmDialog";
 
 type Tab = "receivable" | "payable";
-const confirmDialog = useConfirm();
+
 const TABS: { value: Tab; label: string; type: PendingType }[] = [
   { value: "receivable", label: "They Owe Me", type: "they_owe_me" },
   { value: "payable", label: "I Owe Them", type: "i_owe_them" },
@@ -89,7 +89,7 @@ function PendingContent() {
       toast.error(msg);
     }
   };
-
+  const confirmDialog = useConfirm();
   const handleDelete = async (entry: IPending) => {
     const ok = await confirmDialog({
       title: "Delete entry?",
