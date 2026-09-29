@@ -17,6 +17,7 @@ import {
   FaCalendarAlt,
   FaSignOutAlt,
   FaHandHoldingUsd,
+  FaBriefcase,
 } from "react-icons/fa";
 
 import type { IconType } from "react-icons";
@@ -28,6 +29,7 @@ const NAV_LINKS: { href: string; label: string; icon: IconType }[] = [
   { href: "/dashboard", label: "Dashboard", icon: FaChartBar },
   { href: "/categories", label: "Categories", icon: FaTags },
   { href: "/periods", label: "Periods", icon: FaCalendarAlt },
+  { href: "/business", label: "Business", icon: FaBriefcase },
 ];
 export default function Navbar() {
   const pathname = usePathname();

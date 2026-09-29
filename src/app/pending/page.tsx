@@ -17,9 +17,10 @@ import {
 } from "react-icons/fa";
 import type { IPending, PendingType } from "@/types";
 import PeriodGate from "../components/PeriodGate";
+import { useConfirm } from "../components/ConfirmDialog";
 
 type Tab = "receivable" | "payable";
-
+const confirmDialog = useConfirm();
 const TABS: { value: Tab; label: string; type: PendingType }[] = [
   { value: "receivable", label: "They Owe Me", type: "they_owe_me" },
   { value: "payable", label: "I Owe Them", type: "i_owe_them" },
@@ -90,7 +91,14 @@ function PendingContent() {
   };
 
   const handleDelete = async (entry: IPending) => {
-    if (!confirm(`Delete "${entry.name}" from the list?`)) return;
+    const ok = await confirmDialog({
+      title: "Delete entry?",
+      message: `Remove "${entry.name}" (৳${entry.amount}) from the list?`,
+      confirmText: "Delete",
+      variant: "danger",
+    });
+    if (!ok) return;
+
     try {
       await deletePending(entry._id as string).unwrap();
       toast.success("Removed");
@@ -98,7 +106,6 @@ function PendingContent() {
       toast.error(err?.data?.error || "Failed to delete");
     }
   };
-
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-3xl mx-auto space-y-6">

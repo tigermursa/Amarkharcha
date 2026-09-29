@@ -14,6 +14,7 @@ import type { IPeriodSummary } from "@/types";
 import PeriodGate from "../components/PeriodGate";
 import PeriodDocxButton from "../components/PeriodDocxButton";
 import { toast } from "sonner";
+import { useConfirm } from "../components/ConfirmDialog";
 
 const toInputDate = (d: string) => new Date(d).toISOString().split("T")[0];
 
@@ -38,7 +39,7 @@ function PeriodsContent() {
   const [updatePeriod, { isLoading: updating }] = useUpdatePeriodMutation();
   const [deletePeriod] = useDeletePeriodMutation();
   const [setActive] = useSetActivePeriodMutation();
-
+  const confirmDialog = useConfirm();
   const [showForm, setShowForm] = useState(false);
   const [editing, setEditing] = useState<IPeriodSummary | null>(null);
   const [form, setForm] = useState({
@@ -121,11 +122,18 @@ function PeriodsContent() {
   };
 
   const handleDelete = async (p: IPeriodSummary) => {
+    const ok = await confirmDialog({
+      title: "Delete period?",
+      message: `Delete "${p.name}"? Transactions in this period will block deletion.`,
+      confirmText: "Delete",
+      variant: "danger",
+    });
+    if (!ok) return;
+
     try {
       await deletePeriod(p._id).unwrap();
       toast.success(`Period "${p.name}" deleted`);
     } catch (err: any) {
-      alert(err?.data?.error || "Failed to delete");
       toast.error(err?.data?.error || "Failed to delete");
     }
   };

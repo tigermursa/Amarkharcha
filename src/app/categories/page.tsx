@@ -16,6 +16,7 @@ import * as FaIcons from "react-icons/fa";
 import type { IconType } from "react-icons";
 import type { ICategory } from "@/types";
 import { toast } from "sonner";
+import { useConfirm } from "../components/ConfirmDialog";
 
 export default function CategoriesPage() {
   const { data: session, isPending } = useSession();
@@ -42,7 +43,7 @@ export default function CategoriesPage() {
     const Icon = (FaIcons as any)[name] as IconType | undefined;
     return Icon ? <Icon className={className} /> : null;
   };
-
+  const confirmDialog = useConfirm();
   const resetForm = () => {
     setForm({ name: "", icon: "FaEllipsisH" });
     setEditing(null);
@@ -85,10 +86,16 @@ export default function CategoriesPage() {
       toast.error(msg);
     }
   };
-
   const handleDelete = async (cat: ICategory) => {
     if (cat.isDefault) return;
-    if (!confirm(`Delete category "${cat.name}"?`)) return;
+    const ok = await confirmDialog({
+      title: "Delete category?",
+      message: `Delete "${cat.name}"? This cannot be undone.`,
+      confirmText: "Delete",
+      variant: "danger",
+    });
+    if (!ok) return;
+
     try {
       await deleteCategory(cat._id as string).unwrap();
       toast.success(`Category "${cat.name}" deleted`);

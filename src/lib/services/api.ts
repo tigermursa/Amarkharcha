@@ -9,6 +9,9 @@ import type {
   IPending,
   IPendingGrouped,
   PendingType,
+  IBusiness,
+  IBusinessWithTotals,
+  IProfit,
 } from "@/types";
 import { IPeriodSummaryReport } from "../docx/period-report";
 
@@ -26,6 +29,8 @@ export const apiSlice = createApi({
     "Period",
     "DailyReport",
     "Pending",
+    "Business",
+    "Profit",
   ],
   endpoints: (builder) => ({
     getTransactions: builder.query<
@@ -191,6 +196,85 @@ export const apiSlice = createApi({
       query: (id) => ({ url: `/pendings/${id}`, method: "DELETE" }),
       invalidatesTags: ["Pending"],
     }),
+
+    // ==================== BUSINESS ====================
+    getBusinesses: builder.query<IBusinessWithTotals[], void>({
+      query: () => "/businesses",
+      providesTags: ["Business"],
+    }),
+
+    getBusiness: builder.query<
+      { business: IBusiness; profits: IProfit[]; totalProfit: number },
+      string
+    >({
+      query: (id) => `/businesses/${id}`,
+      providesTags: (_r, _e, id) => [{ type: "Business", id }, "Profit"],
+    }),
+
+    addBusiness: builder.mutation<
+      IBusinessWithTotals,
+      { name: string; personName: string; amount: number; investedDate: string }
+    >({
+      query: (body) => ({ url: "/businesses", method: "POST", body }),
+      invalidatesTags: ["Business"],
+    }),
+
+    updateBusiness: builder.mutation<
+      { success: boolean },
+      {
+        id: string;
+        name?: string;
+        personName?: string;
+        amount?: number;
+        investedDate?: string;
+      }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/businesses/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: (_r, _e, { id }) => [
+        "Business",
+        { type: "Business", id },
+      ],
+    }),
+
+    deleteBusiness: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({ url: `/businesses/${id}`, method: "DELETE" }),
+      invalidatesTags: ["Business"],
+    }),
+
+    addProfit: builder.mutation<
+      IProfit,
+      { businessId: string; month: string; amount: number }
+    >({
+      query: ({ businessId, ...body }) => ({
+        url: `/businesses/${businessId}/profits`,
+        method: "POST",
+        body,
+      }),
+      invalidatesTags: (_r, _e, { businessId }) => [
+        "Business",
+        "Profit",
+        { type: "Business", id: businessId },
+      ],
+    }),
+
+    deleteProfit: builder.mutation<
+      { success: boolean },
+      { businessId: string; profitId: string }
+    >({
+      query: ({ businessId, profitId }) => ({
+        url: `/businesses/${businessId}/profits/${profitId}`,
+        method: "DELETE",
+      }),
+      invalidatesTags: (_r, _e, { businessId }) => [
+        "Business",
+        "Profit",
+        { type: "Business", id: businessId },
+      ],
+    }),
   }),
 });
 
@@ -214,4 +298,11 @@ export const {
   useAddPendingMutation,
   useUpdatePendingMutation,
   useDeletePendingMutation,
+  useGetBusinessesQuery,
+  useGetBusinessQuery,
+  useAddBusinessMutation,
+  useUpdateBusinessMutation,
+  useDeleteBusinessMutation,
+  useAddProfitMutation,
+  useDeleteProfitMutation,
 } = apiSlice;

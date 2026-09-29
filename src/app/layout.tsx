@@ -6,6 +6,7 @@ import { ThemeProvider } from "./providers";
 import StoreProvider from "./providers/StoreProvider";
 import Navbar from "./components/Navbar";
 import ToastProvider from "./components/ToastProvider";
+import { ConfirmProvider } from "./components/ConfirmDialog";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -29,9 +30,11 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <StoreProvider>
-            <Navbar />
-            {children}
-            <ToastProvider />
+            <ConfirmProvider>
+              <Navbar />
+              {children}
+              <ToastProvider />
+            </ConfirmProvider>
           </StoreProvider>
         </ThemeProvider>
       </body>

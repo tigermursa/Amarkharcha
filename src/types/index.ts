@@ -92,3 +92,28 @@ export interface IPendingGrouped {
   receivablesTotal: number;
   payablesTotal: number;
 }
+
+export interface IBusiness {
+  _id?: string | ObjectId;
+  userId: string;
+  name: string;
+  personName: string;
+  amount: number;
+  investedDate: Date;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IBusinessWithTotals extends IBusiness {
+  totalProfit: number;
+  profitCount: number;
+}
+
+export interface IProfit {
+  _id?: string | ObjectId;
+  userId: string;
+  businessId: string;
+  month: string; // "2025-01"
+  amount: number;
+  createdAt: Date;
+}
