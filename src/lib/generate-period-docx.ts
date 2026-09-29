@@ -11,7 +11,7 @@ import {
   AlignmentType,
   BorderStyle,
 } from "docx";
-import type { IPeriodSummaryReport } from "./services/api";
+import { IPeriodSummaryReport } from "./docx/period-report";
 
 const formatDate = (d: string) =>
   new Date(d).toLocaleDateString("en-GB", {

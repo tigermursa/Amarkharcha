@@ -54,7 +54,7 @@ export default function ExpenseForm() {
         note: form.note,
         // periodId omitted → server uses active period
       } as any).unwrap();
-      toast.success(`Category "${created.name}" created`);
+      toast.success(`Category created`);
       setForm(initialForm);
     } catch (err: any) {
       setError(err?.data?.error || "Failed to add expense");

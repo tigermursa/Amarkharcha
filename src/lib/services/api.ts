@@ -6,6 +6,9 @@ import type {
   IDashboardStats,
   IPeriodSummary,
   IDailyReport,
+  IPending,
+  IPendingGrouped,
+  PendingType,
 } from "@/types";
 import { IPeriodSummaryReport } from "../docx/period-report";
 
@@ -15,7 +18,15 @@ export const apiSlice = createApi({
     baseUrl: "/api",
     credentials: "include",
   }),
-  tagTypes: ["Transaction", "Category", "Stats", "Period", "DailyReport"],
+
+  tagTypes: [
+    "Transaction",
+    "Category",
+    "Stats",
+    "Period",
+    "DailyReport",
+    "Pending",
+  ],
   endpoints: (builder) => ({
     getTransactions: builder.query<
       {
@@ -144,6 +155,42 @@ export const apiSlice = createApi({
     getPeriodSummary: builder.query<IPeriodSummaryReport, string>({
       query: (id) => `/periods/${id}/summary`,
     }),
+    // ==================== PENDINGS ====================
+    getPendings: builder.query<IPendingGrouped, void>({
+      query: () => "/pendings",
+      providesTags: ["Pending"],
+    }),
+
+    addPending: builder.mutation<
+      IPending,
+      { type: PendingType; name: string; amount: number; note?: string }
+    >({
+      query: (body) => ({ url: "/pendings", method: "POST", body }),
+      invalidatesTags: ["Pending"],
+    }),
+
+    updatePending: builder.mutation<
+      { success: boolean },
+      {
+        id: string;
+        name?: string;
+        amount?: number;
+        note?: string;
+        type?: PendingType;
+      }
+    >({
+      query: ({ id, ...body }) => ({
+        url: `/pendings/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Pending"],
+    }),
+
+    deletePending: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({ url: `/pendings/${id}`, method: "DELETE" }),
+      invalidatesTags: ["Pending"],
+    }),
   }),
 });
 
@@ -163,4 +210,8 @@ export const {
   useGetDashboardStatsQuery,
   useGetDailyReportQuery,
   useGetPeriodSummaryQuery,
+  useGetPendingsQuery,
+  useAddPendingMutation,
+  useUpdatePendingMutation,
+  useDeletePendingMutation,
 } = apiSlice;
