@@ -46,6 +46,15 @@ export default function Navbar() {
     };
   }, [drawerOpen]);
 
+  // Close on Escape
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setDrawerOpen(false);
+    };
+    if (drawerOpen) window.addEventListener("keydown", onKey);
+    return () => window.removeEventListener("keydown", onKey);
+  }, [drawerOpen]);
+
   const handleLogout = async () => {
     setDrawerOpen(false);
     await signOut();
@@ -53,9 +62,11 @@ export default function Navbar() {
     router.refresh();
   };
 
+  const showDrawer = Boolean(session);
+
   return (
     <>
-      <nav className="border-b border-border bg-card sticky top-0 z-40 backdrop-blur supports-[backdrop-filter]:bg-card/80">
+      <nav className="border-b border-border bg-card/80 backdrop-blur-md sticky top-0 z-40">
         <div className="max-w-6xl mx-auto px-4">
           <div className="flex items-center justify-between h-14 md:h-16 gap-4">
             {/* Logo */}
@@ -95,7 +106,7 @@ export default function Navbar() {
                 <button
                   onClick={handleLogout}
                   title="Logout"
-                  className="p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-muted transition"
+                  className="p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 transition"
                 >
                   <FaSignOutAlt className="text-sm" />
                 </button>
@@ -109,7 +120,7 @@ export default function Navbar() {
                 <button
                   onClick={() => setDrawerOpen(true)}
                   aria-label="Open menu"
-                  className="p-2 rounded-lg text-foreground hover:bg-muted transition"
+                  className="p-2 rounded-lg text-foreground hover:bg-muted active:scale-95 transition"
                 >
                   <FaBars className="text-lg" />
                 </button>
@@ -119,21 +130,28 @@ export default function Navbar() {
         </div>
       </nav>
 
-      {/* Mobile drawer */}
-      {drawerOpen && session && (
+      {/* Mobile drawer (always mounted, animated) */}
+      {showDrawer && (
         <>
           {/* Backdrop */}
           <div
             onClick={() => setDrawerOpen(false)}
-            className="fixed inset-0 z-50 bg-black/50 md:hidden"
             aria-hidden
+            className={`fixed inset-0 z-50 bg-black/60 backdrop-blur-sm md:hidden transition-opacity duration-300 ${
+              drawerOpen
+                ? "opacity-100 pointer-events-auto"
+                : "opacity-0 pointer-events-none"
+            }`}
           />
 
           {/* Drawer */}
           <aside
-            className="fixed top-0 right-0 bottom-0 z-50 w-72 max-w-[85vw] bg-card border-l border-border shadow-xl md:hidden flex flex-col"
             role="dialog"
             aria-label="Navigation menu"
+            aria-hidden={!drawerOpen}
+            className={`fixed top-0 right-0 bottom-0 z-50 w-72 max-w-[85vw] bg-card border-l border-border shadow-2xl md:hidden flex flex-col transition-transform duration-300 ease-out will-change-transform ${
+              drawerOpen ? "translate-x-0" : "translate-x-full"
+            }`}
           >
             {/* Header */}
             <div className="flex items-center justify-between p-4 border-b border-border">
@@ -141,7 +159,7 @@ export default function Navbar() {
               <button
                 onClick={() => setDrawerOpen(false)}
                 aria-label="Close menu"
-                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted transition"
+                className="p-2 rounded-lg text-muted-foreground hover:text-foreground hover:bg-muted active:scale-95 transition"
               >
                 <FaTimes className="text-lg" />
               </button>
@@ -149,7 +167,7 @@ export default function Navbar() {
 
             {/* Period selector */}
             <div className="p-4 border-b border-border">
-              <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2">
+              <p className="text-[10px] uppercase font-bold text-muted-foreground mb-2 tracking-wider">
                 Active Period
               </p>
               <PeriodSelector fullWidth />
@@ -157,14 +175,21 @@ export default function Navbar() {
 
             {/* Nav links */}
             <nav className="flex-1 overflow-y-auto p-3 space-y-1">
-              {NAV_LINKS.map((link) => {
+              {NAV_LINKS.map((link, i) => {
                 const Icon = link.icon;
                 const active = pathname === link.href;
                 return (
                   <Link
                     key={link.href}
                     href={link.href}
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition ${
+                    style={{
+                      transitionDelay: drawerOpen ? `${i * 40}ms` : "0ms",
+                    }}
+                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-300 ${
+                      drawerOpen
+                        ? "opacity-100 translate-x-0"
+                        : "opacity-0 translate-x-4"
+                    } ${
                       active
                         ? "bg-primary/10 text-primary"
                         : "text-foreground hover:bg-muted"
@@ -181,7 +206,7 @@ export default function Navbar() {
             <div className="p-3 border-t border-border">
               <button
                 onClick={handleLogout}
-                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-500/10 transition"
+                className="w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium text-red-500 hover:bg-red-500/10 active:scale-[0.98] transition"
               >
                 <FaSignOutAlt className="text-base shrink-0" />
                 <span>Logout</span>

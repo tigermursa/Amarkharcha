@@ -1,58 +1,68 @@
-// components/ThemeToggle.tsx
+// src/components/ThemeToggle.tsx
 "use client";
 
-import { useTheme } from "next-themes";
 import { useEffect, useState } from "react";
+import { useTheme } from "next-themes";
+import { FaSun, FaMoon, FaDesktop } from "react-icons/fa";
 
 export default function ThemeToggle() {
+  const { theme, setTheme, resolvedTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
-  const { theme, setTheme } = useTheme();
 
-  useEffect(() => {
-    setMounted(true);
-  }, []);
+  useEffect(() => setMounted(true), []);
 
-  if (!mounted) return null;
+  // Prevent hydration mismatch
+  if (!mounted) {
+    return (
+      <button
+        aria-label="Toggle theme"
+        className="relative w-16 h-8 rounded-full bg-muted border border-border"
+      />
+    );
+  }
 
-  const isDark = theme === "dark";
+  const isDark = resolvedTheme === "dark";
 
   return (
-    <button
-      onClick={() => setTheme(isDark ? "light" : "dark")}
-      className="p-2 rounded-full bg-card border border-border text-foreground hover:bg-muted/20 transition-colors duration-200"
-      aria-label="Toggle theme"
-    >
-      {isDark ? (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={1.5}
-          stroke="currentColor"
-          className="w-5 h-5"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 21v-2.25m-6.364-.386 1.591-1.591M3 12h2.25m.386-6.364 1.591 1.591M12 4.5a7.5 7.5 0 1 0 0 15 7.5 7.5 0 0 0 0-15Z"
-          />
-        </svg>
-      ) : (
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={1.5}
-          stroke="currentColor"
-          className="w-5 h-5"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M21.752 15.002A9.72 9.72 0 0 1 18 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 0 0 3 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 0 0 9.002-5.998Z"
-          />
-        </svg>
-      )}
-    </button>
+    <div className="flex items-center gap-1 p-0.5 rounded-full bg-muted border border-border">
+      <button
+        onClick={() => setTheme("light")}
+        aria-label="Light theme"
+        title="Light"
+        className={`relative p-1.5 rounded-full transition-all duration-300 ${
+          theme === "light"
+            ? "bg-card text-yellow-500 shadow-sm scale-100"
+            : "text-muted-foreground hover:text-foreground scale-95"
+        }`}
+      >
+        <FaSun className="text-xs" />
+      </button>
+
+      <button
+        onClick={() => setTheme("system")}
+        aria-label="System theme"
+        title="System"
+        className={`relative p-1.5 rounded-full transition-all duration-300 ${
+          theme === "system"
+            ? "bg-card text-primary shadow-sm scale-100"
+            : "text-muted-foreground hover:text-foreground scale-95"
+        }`}
+      >
+        <FaDesktop className="text-xs" />
+      </button>
+
+      <button
+        onClick={() => setTheme("dark")}
+        aria-label="Dark theme"
+        title="Dark"
+        className={`relative p-1.5 rounded-full transition-all duration-300 ${
+          theme === "dark"
+            ? "bg-card text-indigo-400 shadow-sm scale-100"
+            : "text-muted-foreground hover:text-foreground scale-95"
+        }`}
+      >
+        <FaMoon className="text-xs" />
+      </button>
+    </div>
   );
 }
