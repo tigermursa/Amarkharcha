@@ -1,12 +1,9 @@
-// app/layout.tsx
+// src/app/layout.tsx
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
-import { ThemeProvider } from "./providers";
-import StoreProvider from "./providers/StoreProvider";
+import AppProviders from "./providers/AppProviders";
 import Navbar from "./components/Navbar";
-import ToastProvider from "./components/ToastProvider";
-import { ConfirmProvider } from "./components/ConfirmDialog";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -23,20 +20,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <StoreProvider>
-            <ConfirmProvider>
-              <Navbar />
-              {children}
-              <ToastProvider />
-            </ConfirmProvider>
-          </StoreProvider>
-        </ThemeProvider>
+        <AppProviders>
+          <Navbar />
+          {children}
+        </AppProviders>
       </body>
     </html>
   );

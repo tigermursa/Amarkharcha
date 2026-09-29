@@ -13,6 +13,9 @@ import {
 } from "docx";
 import { IPeriodSummaryReport } from "./docx/period-report";
 
+// ✅ Fix: AlignmentType এর যেকোনো value accept করার জন্য type
+type DocxAlign = (typeof AlignmentType)[keyof typeof AlignmentType];
+
 const formatDate = (d: string) =>
   new Date(d).toLocaleDateString("en-GB", {
     day: "2-digit",
@@ -29,7 +32,7 @@ export async function generatePeriodDocx(
     year: "numeric",
   });
 
-  const headerCell = (text: string, align = AlignmentType.LEFT) =>
+  const headerCell = (text: string, align: DocxAlign = AlignmentType.LEFT) =>
     new TableCell({
       shading: { fill: "E8F5E9" },
       children: [
@@ -42,7 +45,11 @@ export async function generatePeriodDocx(
       ],
     });
 
-  const bodyCell = (text: string, align = AlignmentType.LEFT, bold = false) =>
+  const bodyCell = (
+    text: string,
+    align: DocxAlign = AlignmentType.LEFT,
+    bold = false,
+  ) =>
     new TableCell({
       children: [
         new Paragraph({

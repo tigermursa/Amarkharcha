@@ -10,7 +10,7 @@ import {
   downloadBlob,
   slugifyFilename,
 } from "@/lib/generate-period-docx";
-import type { IPeriodSummaryReport } from "@/lib/services/api";
+import { IPeriodSummaryReport } from "@/lib/docx/period-report";
 
 export default function PeriodDocxButton({
   periodId,
