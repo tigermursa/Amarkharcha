@@ -434,3 +434,7 @@ Instead of organizing finances around the calendar, the system organizes them ar
 ---
 
 ## 👨‍💻 Built By
+
+**Mursalin Hossain**
+
+Built and maintained with a focus on practical personal finance t

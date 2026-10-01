@@ -144,10 +144,10 @@ function StatCard({
       <p className="text-xs md:text-sm text-muted-foreground mb-1 truncate">
         {title}
       </p>
-      {/* <CountUp
+      <CountUp
         value={value}
         className={`text-lg md:text-2xl font-bold truncate ${color}`}
-      /> */}
+      />
     </div>
   );
 }
