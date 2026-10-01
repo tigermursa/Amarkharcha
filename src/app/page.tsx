@@ -88,7 +88,7 @@ function HomeContent() {
         {/* Header */}
         <header className="mb-6 flex flex-wrap items-end justify-between gap-3 md:mb-8">
           <div>
-            <p className="text-sm text-muted-foreground">
+            <p className="text-sm text-foreground/60">
               {new Date().toLocaleDateString("en-GB", {
                 weekday: "long",
                 day: "numeric",
@@ -110,27 +110,44 @@ function HomeContent() {
           )}
         </header>
 
-        {/* Hero: the one bold moment */}
-        <section className="relative overflow-hidden rounded-3xl bg-foreground p-6 text-background md:p-10">
+        {/* Hero: the one bold moment (token-only, so light + dark both work) */}
+        <section className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 md:p-10">
+          {/* soft primary glow */}
           <div
             aria-hidden
-            className="pointer-events-none absolute inset-0 opacity-[0.07]"
+            className="pointer-events-none absolute inset-0"
             style={{
+              background:
+                "radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--color-primary) 22%, transparent), transparent 55%)",
+            }}
+          />
+          {/* fine grid */}
+          <div
+            aria-hidden
+            className="pointer-events-none absolute inset-0"
+            style={{
+              opacity: 0.07,
+              color: "var(--color-primary)",
               backgroundImage:
                 "linear-gradient(currentColor 1px, transparent 1px), linear-gradient(90deg, currentColor 1px, transparent 1px)",
               backgroundSize: "32px 32px",
+              maskImage:
+                "radial-gradient(circle at 0% 100%, black, transparent 70%)",
+              WebkitMaskImage:
+                "radial-gradient(circle at 0% 100%, black, transparent 70%)",
             }}
           />
+
           <div className="relative">
-            <p className="text-sm text-background/60">
+            <p className="text-sm text-foreground/60">
               Spent {activePeriod ? "this period" : "so far"}
             </p>
             <CountUp
               value={stats?.currentPeriodExpense || 0}
-              className="mt-2 block text-5xl font-semibold leading-none tracking-tighter tabular-nums sm:text-6xl md:text-8xl"
+              className="mt-2 block text-5xl font-semibold leading-none tracking-tighter text-primary tabular-nums sm:text-6xl md:text-8xl"
             />
 
-            <dl className="mt-8 grid grid-cols-3 border-t border-background/15 pt-5 md:mt-12">
+            <dl className="mt-8 grid grid-cols-3 border-t border-border pt-5 md:mt-12">
               {[
                 { label: "Today", value: stats?.todayExpense || 0 },
                 { label: "This month", value: stats?.monthExpense || 0 },
@@ -138,15 +155,15 @@ function HomeContent() {
               ].map((s, i) => (
                 <div
                   key={s.label}
-                  className={`min-w-0 ${i > 0 ? "border-l border-background/15 pl-4 md:pl-8" : ""}`}
+                  className={`min-w-0 ${i > 0 ? "border-l border-border pl-4 md:pl-8" : ""}`}
                 >
-                  <dt className="truncate text-xs text-background/60 md:text-sm">
+                  <dt className="truncate text-xs text-foreground/60 md:text-sm">
                     {s.label}
                   </dt>
                   <dd>
                     <CountUp
                       value={s.value}
-                      className="mt-1 block truncate text-base font-medium tabular-nums md:text-2xl"
+                      className="mt-1 block truncate text-base font-medium text-foreground tabular-nums md:text-2xl"
                     />
                   </dd>
                 </div>
@@ -165,45 +182,45 @@ function HomeContent() {
 
           <section className="lg:col-span-7">
             <div className="rounded-3xl border border-border bg-card">
-              <div className="flex items-baseline justify-between px-5 pb-4 pt-5 md:px-7 md:pt-6">
+              <div className="flex items-baseline justify-between px-5 pb-3 pt-5 md:px-7 md:pt-6">
                 <h2 className="text-lg font-semibold text-foreground">
                   Recent spending
                 </h2>
                 {transactions.length > 0 && (
-                  <span className="text-sm text-muted-foreground">
+                  <span className="text-sm text-foreground/60">
                     Last {transactions.length}
                   </span>
                 )}
               </div>
 
-              <div className="max-h-[560px] overflow-y-auto px-5 pb-5 md:px-7 md:pb-6">
+              <div className="max-h-[560px] overflow-y-auto px-3 pb-4 md:px-5 md:pb-5">
                 {groups.map((g) => (
-                  <div key={g.key} className="mb-2 last:mb-0">
-                    <div className="sticky top-0 z-10 -mx-1 flex items-center justify-between border-b border-dashed border-border bg-card/95 px-1 py-2 backdrop-blur">
+                  <div key={g.key} className="mb-1 last:mb-0">
+                    <div className="sticky top-0 z-10 mx-2 flex items-center justify-between border-b border-dashed border-border bg-card px-1 py-2">
                       <span className="text-sm font-medium text-foreground">
                         {g.label}
                       </span>
-                      <span className="text-sm tabular-nums text-muted-foreground">
+                      <span className="text-sm text-foreground/60 tabular-nums">
                         ৳{g.total.toLocaleString("en-US")}
                       </span>
                     </div>
 
-                    <ul>
+                    <ul className="pt-1">
                       {g.items.map((t) => (
                         <li
                           key={t._id as string}
-                          className="ledger-row flex items-center justify-between gap-3 py-3"
+                          className="ledger-row flex items-center justify-between gap-3 rounded-2xl px-2 py-2.5 transition-colors hover:bg-foreground/5"
                           style={{ animationDelay: `${rowIndex++ * 45}ms` }}
                         >
                           <div className="flex min-w-0 items-center gap-3">
-                            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                            <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-primary/15 text-primary">
                               {renderIcon(t.categoryIcon || "FaEllipsisH")}
                             </div>
                             <div className="min-w-0">
                               <p className="truncate font-medium text-foreground">
                                 {t.item}
                               </p>
-                              <p className="truncate text-sm text-muted-foreground">
+                              <p className="truncate text-sm text-foreground/60">
                                 {t.categoryName}
                                 {t.quantity && t.unit
                                   ? ` · ${t.quantity} ${t.unit}`
@@ -211,7 +228,7 @@ function HomeContent() {
                               </p>
                             </div>
                           </div>
-                          <p className="shrink-0 font-semibold tabular-nums text-foreground">
+                          <p className="shrink-0 font-semibold text-foreground tabular-nums">
                             −৳{t.price}
                           </p>
                         </li>
@@ -221,11 +238,11 @@ function HomeContent() {
                 ))}
 
                 {transactions.length === 0 && (
-                  <div className="py-14 text-center">
+                  <div className="px-4 py-14 text-center">
                     <p className="font-medium text-foreground">
                       Nothing logged yet
                     </p>
-                    <p className="mt-1 text-sm text-muted-foreground">
+                    <p className="mt-1 text-sm text-foreground/60">
                       Add your first expense and it will show up here.
                     </p>
                   </div>
