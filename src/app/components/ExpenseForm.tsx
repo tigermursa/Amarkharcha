@@ -277,7 +277,7 @@ export default function ExpenseForm() {
 
       {!activePeriod && (
         <p className="text-xs text-center text-muted-foreground">
-          No active period — pick or create one first here.
+          No active period — pick or create one first
         </p>
       )}
     </form>
