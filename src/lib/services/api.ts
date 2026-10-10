@@ -275,6 +275,19 @@ export const apiSlice = createApi({
         { type: "Business", id: businessId },
       ],
     }),
+
+    // Transaction
+    updateTransaction: builder.mutation<
+      { success: boolean; transaction: ITransaction },
+      { id: string; body: Partial<ITransaction> }
+    >({
+      query: ({ id, body }) => ({
+        url: `/transactions/${id}`,
+        method: "PUT",
+        body,
+      }),
+      invalidatesTags: ["Transaction", "Stats", "Period", "DailyReport"],
+    }),
   }),
 });
 
@@ -305,4 +318,5 @@ export const {
   useDeleteBusinessMutation,
   useAddProfitMutation,
   useDeleteProfitMutation,
+  useUpdateTransactionMutation,
 } = apiSlice;

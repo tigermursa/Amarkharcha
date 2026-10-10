@@ -11,6 +11,13 @@ import * as FaIcons from "react-icons/fa";
 import type { IconType } from "react-icons";
 import PeriodGate from "../components/PeriodGate";
 
+import { useDeleteTransactionMutation } from "@/lib/services/api";
+import { toast } from "sonner";
+import { FaEdit, FaTrash } from "react-icons/fa";
+import type { ITransaction } from "@/types";
+import EditTransactionModal from "../components/EditTransactionModal";
+import { useConfirm } from "../components/ConfirmDialog";
+
 type SortOption = "date_desc" | "date_asc" | "price_desc" | "price_asc";
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
@@ -34,7 +41,9 @@ function TransactionsContent() {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [categoryId, setCategoryId] = useState("");
-
+  const [deleteTransaction] = useDeleteTransactionMutation();
+  const confirmDialog = useConfirm();
+  const [editing, setEditing] = useState<ITransaction | null>(null);
   const queryParams = useMemo(
     () => ({
       page,
@@ -67,7 +76,22 @@ function TransactionsContent() {
 
   const total = data?.total || 0;
   const totalPages = data?.totalPages || 1;
+  const handleDelete = async (t: ITransaction) => {
+    const ok = await confirmDialog({
+      title: "Delete transaction?",
+      message: `Remove "${t.item}" (৳${t.price})? This cannot be undone.`,
+      confirmText: "Delete",
+      variant: "danger",
+    });
+    if (!ok) return;
 
+    try {
+      await deleteTransaction(t._id as string).unwrap();
+      toast.success("Transaction deleted");
+    } catch (err: any) {
+      toast.error(err?.data?.error || "Failed to delete");
+    }
+  };
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
@@ -205,11 +229,11 @@ function TransactionsContent() {
                   key={t._id as string}
                   className="flex items-center justify-between gap-3 p-4 hover:bg-muted/30 transition"
                 >
-                  <div className="flex items-center gap-3 min-w-0">
+                  <div className="flex items-center gap-3 min-w-0 flex-1">
                     <div className="w-10 h-10 shrink-0 rounded-full bg-primary/10 text-primary flex items-center justify-center">
                       {renderIcon(t.categoryIcon || "FaEllipsisH")}
                     </div>
-                    <div className="min-w-0">
+                    <div className="min-w-0 flex-1">
                       <p className="font-medium text-foreground truncate">
                         {t.item}
                       </p>
@@ -222,17 +246,42 @@ function TransactionsContent() {
                         })}
                         {t.periodName && ` • ${t.periodName}`}
                       </p>
+                      {t.note && (
+                        <p className="text-xs text-muted-foreground/80 truncate italic mt-0.5">
+                          {t.note}
+                        </p>
+                      )}
                     </div>
                   </div>
-                  <div className="text-right shrink-0">
-                    <p className="font-bold text-red-500">
-                      -৳{t.price.toLocaleString("en-US")}
-                    </p>
-                    {t.quantity && t.unit && (
-                      <p className="text-xs text-muted-foreground">
-                        {t.quantity} {t.unit}
+
+                  <div className="flex items-center gap-2 shrink-0">
+                    <div className="text-right">
+                      <p className="font-bold text-red-500">
+                        -৳{t.price.toLocaleString("en-US")}
                       </p>
-                    )}
+                      {t.quantity && t.unit && (
+                        <p className="text-xs text-muted-foreground">
+                          {t.quantity} {t.unit}
+                        </p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center gap-0.5">
+                      <button
+                        onClick={() => setEditing(t)}
+                        title="Edit"
+                        className="p-2 rounded-lg text-muted-foreground hover:text-primary hover:bg-primary/10 active:scale-95 transition"
+                      >
+                        <FaEdit className="text-xs" />
+                      </button>
+                      <button
+                        onClick={() => handleDelete(t)}
+                        title="Delete"
+                        className="p-2 rounded-lg text-muted-foreground hover:text-red-500 hover:bg-red-500/10 active:scale-95 transition"
+                      >
+                        <FaTrash className="text-xs" />
+                      </button>
+                    </div>
                   </div>
                 </div>
               ))}
@@ -292,6 +341,11 @@ function TransactionsContent() {
           </div>
         )}
       </div>
+      <EditTransactionModal
+        open={!!editing}
+        transaction={editing}
+        onClose={() => setEditing(null)}
+      />
     </div>
   );
 }
