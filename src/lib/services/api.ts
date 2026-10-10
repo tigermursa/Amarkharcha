@@ -160,6 +160,26 @@ export const apiSlice = createApi({
     getPeriodSummary: builder.query<IPeriodSummaryReport, string>({
       query: (id) => `/periods/${id}/summary`,
     }),
+
+    getCategoryBreakdown: builder.query<
+      {
+        total: number;
+        categories: {
+          categoryId: string;
+          name: string;
+          icon: string;
+          total: number;
+          count: number;
+        }[];
+      },
+      { periodId?: string } | void
+    >({
+      query: (params) => ({
+        url: "/reports/categories",
+        params: params || {},
+      }),
+      providesTags: ["Transaction"],
+    }),
     // ==================== PENDINGS ====================
     getPendings: builder.query<IPendingGrouped, void>({
       query: () => "/pendings",
@@ -319,4 +339,5 @@ export const {
   useAddProfitMutation,
   useDeleteProfitMutation,
   useUpdateTransactionMutation,
+  useGetCategoryBreakdownQuery,
 } = apiSlice;

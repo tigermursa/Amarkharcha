@@ -8,6 +8,7 @@ import {
 import PeriodGate from "../components/PeriodGate";
 import DailyChart from "../components/DailyChart";
 import CountUp from "../components/CountUp";
+import CategoryPieChart from "../components/CategoryPieChart";
 
 export default function DashboardPage() {
   return (
@@ -23,6 +24,7 @@ function DashboardContent() {
 
   const grandTotal = periods?.reduce((s, p) => s + p.total, 0) || 0;
   const grandCount = periods?.reduce((s, p) => s + p.count, 0) || 0;
+  const activePeriod = periods?.find((p) => p.isActive);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
@@ -60,7 +62,7 @@ function DashboardContent() {
         </div>
 
         <DailyChart />
-
+        <CategoryPieChart periodId={activePeriod?._id} />
         {/* Period summary table */}
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="p-5 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
