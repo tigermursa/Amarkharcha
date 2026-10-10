@@ -9,6 +9,7 @@ import PeriodGate from "../components/PeriodGate";
 import DailyChart from "../components/DailyChart";
 import CountUp from "../components/CountUp";
 import CategoryPieChart from "../components/CategoryPieChart";
+import MonthlyIncomeTable from "../components/MonthlyIncomeTable";
 
 export default function DashboardPage() {
   return (
@@ -63,6 +64,7 @@ function DashboardContent() {
 
         <DailyChart />
         <CategoryPieChart periodId={activePeriod?._id} />
+        <MonthlyIncomeTable />
         {/* Period summary table */}
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
           <div className="p-5 border-b border-border flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">

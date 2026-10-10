@@ -117,3 +117,34 @@ export interface IProfit {
   amount: number;
   createdAt: Date;
 }
+
+export interface IIncome {
+  _id?: string | ObjectId;
+  userId: string;
+  periodId: string;
+  periodName: string;
+  date: Date;
+  source: string;
+  amount: number;
+  note?: string;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface IMonthlyIncome {
+  month: string; // "2025-10"
+  label: string; // "Oct 2025"
+  income: number;
+  expense: number;
+  net: number;
+}
+
+export interface IDashboardStats {
+  totalExpense: number;
+  totalIncome: number;
+  balance: number;
+  todayExpense: number;
+  currentPeriodExpense: number;
+  currentPeriodIncome: number;
+  transactionCount: number;
+}

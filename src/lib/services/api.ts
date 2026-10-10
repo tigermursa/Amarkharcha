@@ -12,6 +12,8 @@ import type {
   IBusiness,
   IBusinessWithTotals,
   IProfit,
+  IIncome,
+  IMonthlyIncome,
 } from "@/types";
 import { IPeriodSummaryReport } from "../docx/period-report";
 
@@ -31,6 +33,8 @@ export const apiSlice = createApi({
     "Pending",
     "Business",
     "Profit",
+    "Income",
+    "MonthlyIncome",
   ],
   endpoints: (builder) => ({
     getTransactions: builder.query<
@@ -308,6 +312,61 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ["Transaction", "Stats", "Period", "DailyReport"],
     }),
+
+    // ==================== INCOMES ====================
+    getIncomes: builder.query<
+      {
+        incomes: IIncome[];
+        total: number;
+        totalAmount: number;
+        page: number;
+        limit: number;
+        totalPages: number;
+      },
+      {
+        page?: number;
+        limit?: number;
+        periodId?: string;
+        sort?:
+          | "created_desc"
+          | "date_desc"
+          | "date_asc"
+          | "amount_desc"
+          | "amount_asc";
+      } | void
+    >({
+      query: (params) => ({ url: "/incomes", params: params || {} }),
+      providesTags: ["Income"],
+    }),
+
+    addIncome: builder.mutation<IIncome, Partial<IIncome>>({
+      query: (body) => ({ url: "/incomes", method: "POST", body }),
+      invalidatesTags: ["Income", "Stats", "Period", "MonthlyIncome"],
+    }),
+
+    updateIncome: builder.mutation<
+      { success: boolean },
+      { id: string; body: Partial<IIncome> }
+    >({
+      query: ({ id, body }) => ({ url: `/incomes/${id}`, method: "PUT", body }),
+      invalidatesTags: ["Income", "Stats", "MonthlyIncome"],
+    }),
+
+    deleteIncome: builder.mutation<{ success: boolean }, string>({
+      query: (id) => ({ url: `/incomes/${id}`, method: "DELETE" }),
+      invalidatesTags: ["Income", "Stats", "MonthlyIncome"],
+    }),
+
+    getMonthlyIncome: builder.query<
+      IMonthlyIncome[],
+      { months?: number } | void
+    >({
+      query: (params) => ({
+        url: "/reports/monthly-income",
+        params: params || {},
+      }),
+      providesTags: ["MonthlyIncome"],
+    }),
   }),
 });
 
@@ -340,4 +399,9 @@ export const {
   useDeleteProfitMutation,
   useUpdateTransactionMutation,
   useGetCategoryBreakdownQuery,
+  useGetIncomesQuery,
+  useAddIncomeMutation,
+  useUpdateIncomeMutation,
+  useDeleteIncomeMutation,
+  useGetMonthlyIncomeQuery,
 } = apiSlice;

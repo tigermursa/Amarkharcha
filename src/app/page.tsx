@@ -1,6 +1,7 @@
 // app/page.tsx
 "use client";
 
+import { useState } from "react";
 import {
   useGetDashboardStatsQuery,
   useGetTransactionsQuery,
@@ -10,6 +11,7 @@ import { useSession } from "@/lib/auth-client";
 import * as FaIcons from "react-icons/fa";
 import type { IconType } from "react-icons";
 import ExpenseForm from "./components/ExpenseForm";
+import IncomeForm from "./components/IncomeForm";
 import PeriodGate from "./components/PeriodGate";
 import CountUp from "./components/CountUp";
 
@@ -40,6 +42,8 @@ function HomeContent() {
   const { data: periods } = useGetPeriodsQuery();
   const activePeriod = periods?.find((p) => p.isActive);
 
+  const [formTab, setFormTab] = useState<"expense" | "income">("expense");
+
   // Show recent transactions from the active period
   const { data: transactionsData } = useGetTransactionsQuery(
     activePeriod ? { periodId: activePeriod._id, limit: 10 } : { limit: 10 },
@@ -51,6 +55,8 @@ function HomeContent() {
   };
 
   const transactions = transactionsData?.transactions ?? [];
+  const balance = stats?.balance ?? 0;
+  const balancePositive = balance >= 0;
 
   // Group by day for the ledger
   const groups: {
@@ -110,9 +116,8 @@ function HomeContent() {
           )}
         </header>
 
-        {/* Hero: the one bold moment (token-only, so light + dark both work) */}
+        {/* Hero */}
         <section className="relative overflow-hidden rounded-3xl border border-border bg-card p-6 md:p-10">
-          {/* soft primary glow */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
@@ -121,7 +126,6 @@ function HomeContent() {
                 "radial-gradient(circle at 100% 0%, color-mix(in srgb, var(--color-primary) 22%, transparent), transparent 55%)",
             }}
           />
-          {/* fine grid */}
           <div
             aria-hidden
             className="pointer-events-none absolute inset-0"
@@ -150,7 +154,11 @@ function HomeContent() {
             <dl className="mt-8 grid grid-cols-3 border-t border-border pt-5 md:mt-12">
               {[
                 { label: "Today", value: stats?.todayExpense || 0 },
-                { label: "This month", value: stats?.monthExpense || 0 },
+                {
+                  label: "Balance",
+                  value: balance,
+                  isBalance: true,
+                },
                 { label: "All time", value: stats?.totalExpense || 0 },
               ].map((s, i) => (
                 <div
@@ -161,10 +169,20 @@ function HomeContent() {
                     {s.label}
                   </dt>
                   <dd>
-                    <CountUp
-                      value={s.value}
-                      className="mt-1 block truncate text-base font-medium text-foreground tabular-nums md:text-2xl"
-                    />
+                    {s.isBalance ? (
+                      <CountUp
+                        value={Math.abs(s.value)}
+                        prefix={s.value < 0 ? "-৳" : "৳"}
+                        className={`mt-1 block truncate text-base font-medium tabular-nums md:text-2xl ${
+                          s.value >= 0 ? "text-green-600" : "text-red-500"
+                        }`}
+                      />
+                    ) : (
+                      <CountUp
+                        value={s.value}
+                        className="mt-1 block truncate text-base font-medium text-foreground tabular-nums md:text-2xl"
+                      />
+                    )}
                   </dd>
                 </div>
               ))}
@@ -175,8 +193,32 @@ function HomeContent() {
         {/* Form + Ledger */}
         <div className="mt-6 grid gap-6 md:mt-8 lg:grid-cols-12 lg:gap-8">
           <div className="lg:col-span-5">
-            <div className="lg:sticky lg:top-6">
-              <ExpenseForm />
+            <div className="lg:sticky lg:top-6 space-y-4">
+              {/* Tab switcher */}
+              <div className="grid grid-cols-2 gap-1.5 rounded-2xl border border-border bg-card p-1.5">
+                <button
+                  onClick={() => setFormTab("expense")}
+                  className={`rounded-xl px-4 py-2.5 text-sm font-medium transition ${
+                    formTab === "expense"
+                      ? "bg-primary/15 text-primary"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  Expense
+                </button>
+                <button
+                  onClick={() => setFormTab("income")}
+                  className={`rounded-xl px-4 py-2.5 text-sm font-medium transition ${
+                    formTab === "income"
+                      ? "bg-green-500/15 text-green-600"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
+                >
+                  Income
+                </button>
+              </div>
+
+              {formTab === "expense" ? <ExpenseForm /> : <IncomeForm />}
             </div>
           </div>
 
