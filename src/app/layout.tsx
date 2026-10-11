@@ -1,4 +1,6 @@
 // src/app/layout.tsx
+import { setServers } from "node:dns/promises";
+setServers(["1.1.1.1", "8.8.8.8"]);
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "./globals.css";
@@ -20,10 +22,7 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className} suppressHydrationWarning>
-        <AppProviders>
-          <Navbar />
-          {children}
-        </AppProviders>
+        <AppProviders>{children}</AppProviders>
       </body>
     </html>
   );
