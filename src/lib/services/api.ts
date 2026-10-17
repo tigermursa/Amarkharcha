@@ -41,7 +41,7 @@ export const apiSlice = createApi({
       {
         transactions: ITransaction[];
         total: number;
-        totalAmount: number; // 👈 new
+        totalAmount: number;
         page: number;
         limit: number;
         totalPages: number;
@@ -59,6 +59,7 @@ export const apiSlice = createApi({
         endDate?: string;
         categoryId?: string;
         periodId?: string;
+        search?: string; // 👈 নতুন
       } | void
     >({
       query: (params) => ({ url: "/transactions", params: params || {} }),

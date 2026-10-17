@@ -1,28 +1,33 @@
 // src/app/transactions/page.tsx
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 
 import {
   useGetTransactionsQuery,
   useGetCategoriesQuery,
+  useDeleteTransactionMutation,
 } from "@/lib/services/api";
-import * as FaIcons from "react-icons/fa";
-import type { IconType } from "react-icons";
-import PeriodGate from "../components/PeriodGate";
-
-import { useDeleteTransactionMutation } from "@/lib/services/api";
 import { toast } from "sonner";
-import { FaEdit, FaTrash } from "react-icons/fa";
+import * as FaIcons from "react-icons/fa";
+import { FaSearch, FaTimes, FaEdit, FaTrash } from "react-icons/fa";
+import type { IconType } from "react-icons";
 import type { ITransaction } from "@/types";
+import PeriodGate from "../components/PeriodGate";
 import EditTransactionModal from "../components/EditTransactionModal";
 import { useConfirm } from "../components/ConfirmDialog";
 
-type SortOption = "date_desc" | "date_asc" | "price_desc" | "price_asc";
+type SortOption =
+  | "created_desc"
+  | "date_desc"
+  | "date_asc"
+  | "price_desc"
+  | "price_asc";
 
 const SORT_OPTIONS: { value: SortOption; label: string }[] = [
-  { value: "date_desc", label: "Newest first" },
-  { value: "date_asc", label: "Oldest first" },
+  { value: "created_desc", label: "Newest added" },
+  { value: "date_desc", label: "Newest date" },
+  { value: "date_asc", label: "Oldest date" },
   { value: "price_desc", label: "Price: High to Low" },
   { value: "price_asc", label: "Price: Low to High" },
 ];
@@ -37,27 +42,44 @@ export default function TransactionsPage() {
 
 function TransactionsContent() {
   const [page, setPage] = useState(1);
-  const [sort, setSort] = useState<SortOption>("date_desc");
+  const [sort, setSort] = useState<SortOption>("created_desc");
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [categoryId, setCategoryId] = useState("");
-  const [deleteTransaction] = useDeleteTransactionMutation();
-  const confirmDialog = useConfirm();
+
+  // Search States
+  const [searchInput, setSearchInput] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+
+  // Edit/Delete States
   const [editing, setEditing] = useState<ITransaction | null>(null);
+  const confirmDialog = useConfirm();
+
+  // Debounce search
+  useEffect(() => {
+    const handler = setTimeout(() => {
+      setSearchQuery(searchInput);
+      setPage(1);
+    }, 500);
+    return () => clearTimeout(handler);
+  }, [searchInput]);
+
   const queryParams = useMemo(
     () => ({
       page,
       limit: 20,
       sort,
+      search: searchQuery,
       ...(startDate && { startDate }),
       ...(endDate && { endDate }),
       ...(categoryId && { categoryId }),
     }),
-    [page, sort, startDate, endDate, categoryId],
+    [page, sort, startDate, endDate, categoryId, searchQuery],
   );
 
   const { data, isFetching } = useGetTransactionsQuery(queryParams);
   const { data: categories } = useGetCategoriesQuery();
+  const [deleteTransaction] = useDeleteTransactionMutation();
 
   const renderIcon = (name: string) => {
     const Icon = (FaIcons as any)[name] as IconType | undefined;
@@ -68,14 +90,12 @@ function TransactionsContent() {
     setStartDate("");
     setEndDate("");
     setCategoryId("");
-    setSort("date_desc");
+    setSort("created_desc");
+    setSearchInput("");
+    setSearchQuery("");
     setPage(1);
   };
 
-  const hasFilters = startDate || endDate || categoryId || sort !== "date_desc";
-
-  const total = data?.total || 0;
-  const totalPages = data?.totalPages || 1;
   const handleDelete = async (t: ITransaction) => {
     const ok = await confirmDialog({
       title: "Delete transaction?",
@@ -92,20 +112,32 @@ function TransactionsContent() {
       toast.error(err?.data?.error || "Failed to delete");
     }
   };
+
+  const hasFilters =
+    startDate ||
+    endDate ||
+    categoryId ||
+    sort !== "created_desc" ||
+    searchQuery !== "";
+
+  const total = data?.total || 0;
+  const totalPages = data?.totalPages || 1;
+
   return (
     <div className="min-h-screen bg-background p-4 md:p-8">
       <div className="max-w-5xl mx-auto space-y-6">
-        {/* Header */}
         {/* Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
           <div>
             <h1 className="text-2xl md:text-3xl font-bold text-foreground">
               All Transactions
             </h1>
-            <p className="text-muted-foreground text-sm">
-              {total.toLocaleString("en-US")} transaction
-              {total !== 1 ? "s" : ""}
-              {" · "}
+            <p className="text-muted-foreground text-sm flex flex-wrap gap-x-2">
+              <span>
+                {total.toLocaleString("en-US")} transaction
+                {total !== 1 ? "s" : ""}
+              </span>
+              <span>·</span>
               <span className="font-semibold text-red-500">
                 ৳{(data?.totalAmount || 0).toLocaleString("en-US")}
               </span>
@@ -113,8 +145,31 @@ function TransactionsContent() {
           </div>
         </div>
 
-        {/* Filters */}
-        <div className="p-4 rounded-2xl bg-card border border-border space-y-3">
+        {/* Filters Box */}
+        <div className="p-4 rounded-2xl bg-card border border-border space-y-4">
+          {/* Search Bar */}
+          <div className="relative">
+            <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-muted-foreground">
+              <FaSearch className="text-sm" />
+            </div>
+            <input
+              type="text"
+              placeholder="Search by item name or note..."
+              value={searchInput}
+              onChange={(e) => setSearchInput(e.target.value)}
+              className="w-full pl-9 pr-10 py-2.5 rounded-xl border border-border bg-background text-foreground text-sm focus:outline-none focus:ring-2 focus:ring-primary transition"
+            />
+            {searchInput && (
+              <button
+                onClick={() => setSearchInput("")}
+                className="absolute inset-y-0 right-0 pr-3 flex items-center text-muted-foreground hover:text-foreground transition"
+              >
+                <FaTimes className="text-sm" />
+              </button>
+            )}
+          </div>
+
+          {/* 4 Column Grid */}
           <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-3">
             {/* Sort */}
             <div>
@@ -192,6 +247,7 @@ function TransactionsContent() {
             </div>
           </div>
 
+          {/* Clear Filters */}
           {hasFilters && (
             <div className="flex justify-end pt-2 border-t border-border">
               <button
@@ -204,7 +260,7 @@ function TransactionsContent() {
           )}
         </div>
 
-        {/* List */}
+        {/* List Box */}
         <div className="bg-card rounded-2xl border border-border overflow-hidden">
           {isFetching ? (
             <p className="p-8 text-center text-muted-foreground text-sm">
@@ -304,7 +360,6 @@ function TransactionsContent() {
                 Previous
               </button>
 
-              {/* Page numbers */}
               <div className="hidden sm:flex items-center gap-1">
                 {getPageNumbers(page, totalPages).map((p, i) =>
                   p === "..." ? (
@@ -341,6 +396,8 @@ function TransactionsContent() {
           </div>
         )}
       </div>
+
+      {/* Edit Modal */}
       <EditTransactionModal
         open={!!editing}
         transaction={editing}
@@ -350,7 +407,7 @@ function TransactionsContent() {
   );
 }
 
-// Returns a compact page list like: [1, "...", 4, 5, 6, "...", 20]
+// Pagination helper
 function getPageNumbers(current: number, total: number): (number | "...")[] {
   if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
 
