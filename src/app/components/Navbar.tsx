@@ -18,6 +18,7 @@ import {
   FaSignOutAlt,
   FaHandHoldingUsd,
   FaBriefcase,
+  FaMoneyBillWave,
 } from "react-icons/fa";
 
 import type { IconType } from "react-icons";
@@ -25,11 +26,11 @@ import type { IconType } from "react-icons";
 const NAV_LINKS: { href: string; label: string; icon: IconType }[] = [
   { href: "/", label: "Home", icon: FaHome },
   { href: "/transactions", label: "Transactions", icon: FaListAlt },
+  { href: "/income", label: "Income", icon: FaMoneyBillWave }, // 👈 নতুন লিংক
   { href: "/pending", label: "Pending", icon: FaHandHoldingUsd },
   { href: "/dashboard", label: "Dashboard", icon: FaChartBar },
   { href: "/categories", label: "Categories", icon: FaTags },
   { href: "/periods", label: "Periods", icon: FaCalendarAlt },
-  { href: "/business", label: "Business", icon: FaBriefcase },
 ];
 export default function Navbar() {
   const pathname = usePathname();
